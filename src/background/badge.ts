@@ -7,7 +7,7 @@ export async function updateBadge(
   settings: Settings,
 ): Promise<void> {
   let text = '';
-  if (snapshot && snapshot.authState === 'ok') {
+  if (settings.badgeEnabled && snapshot && snapshot.authState === 'ok') {
     const sections = filterSections(snapshot.sections, settings.allowlist, settings.blocklist);
     const ids = new Set<string>(['review-requested']);
     if (settings.badgeIncludeTeamReview) ids.add('team-review-requested');

@@ -31,6 +31,7 @@
   "groupNamePlaceholder": { "message": "Group name" },
   "autoCloseLabel": { "message": "Automatically close tabs for PRs that left the inbox" },
   "badgeHeader": { "message": "Toolbar badge" },
+  "badgeEnabledLabel": { "message": "Show the count badge on the toolbar icon" },
   "badgeIncludeTeamLabel": { "message": "Include team review requests in the count" },
   "forceAlignOnRefreshLabel": { "message": "Force-align tab groups on every refresh" },
   "forceAlignNow": { "message": "Force-align now" },

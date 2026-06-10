@@ -31,6 +31,7 @@
   "groupNamePlaceholder": { "message": "グループ名" },
   "autoCloseLabel": { "message": "Inboxから消えたPRのタブを自動で閉じる" },
   "badgeHeader": { "message": "ツールバーバッジ" },
+  "badgeEnabledLabel": { "message": "ツールバーアイコンに件数バッジを表示" },
   "badgeIncludeTeamLabel": { "message": "件数に「チームのレビュー」も含める" },
   "forceAlignOnRefreshLabel": { "message": "更新のたびにタブグループを強制整列する" },
   "forceAlignNow": { "message": "今すぐ強制整列" },

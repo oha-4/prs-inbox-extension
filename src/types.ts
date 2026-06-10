@@ -73,6 +73,8 @@ export interface Settings {
   /** /pulls/inbox/queries の max_pr_age（'1m' | '1y' を確認済み） */
   maxPrAge: string;
   autoCloseRemoved: boolean;
+  /** ツールバーアイコンに件数バッジを表示するか（既定: 表示） */
+  badgeEnabled: boolean;
   /** バッジ件数に team-review-requested も含めるか（既定: review-requested のみ） */
   badgeIncludeTeamReview: boolean;
   /** タブグループ内の並び順（先頭の条件が最優先の多段ソート） */

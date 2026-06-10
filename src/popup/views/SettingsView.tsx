@@ -158,13 +158,22 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
         <SectionHeader icon={Bell}>{t('badgeHeader')}</SectionHeader>
         <label className="flex cursor-pointer items-center gap-2 text-[13px]">
           <Switch
-            checked={settings.badgeIncludeTeamReview}
-            onCheckedChange={(checked) =>
-              update((s) => ({ ...s, badgeIncludeTeamReview: checked }))
-            }
+            checked={settings.badgeEnabled}
+            onCheckedChange={(checked) => update((s) => ({ ...s, badgeEnabled: checked }))}
           />
-          {t('badgeIncludeTeamLabel')}
+          {t('badgeEnabledLabel')}
         </label>
+        {settings.badgeEnabled && (
+          <label className="animate-in fade-in flex cursor-pointer items-center gap-2 pl-7 text-[13px] duration-200">
+            <Switch
+              checked={settings.badgeIncludeTeamReview}
+              onCheckedChange={(checked) =>
+                update((s) => ({ ...s, badgeIncludeTeamReview: checked }))
+              }
+            />
+            {t('badgeIncludeTeamLabel')}
+          </label>
+        )}
       </section>
 
       <section className="space-y-2">

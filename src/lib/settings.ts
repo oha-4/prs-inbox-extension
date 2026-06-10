@@ -37,6 +37,7 @@ export function defaultSettings(): Settings {
     pollIntervalMinutes: 5,
     maxPrAge: '1m',
     autoCloseRemoved: true,
+    badgeEnabled: true,
     badgeIncludeTeamReview: false,
     sortCriteria: DEFAULT_SORT.map((c) => ({ ...c })),
     forceAlignOnRefresh: false,
@@ -59,6 +60,7 @@ export function mergeSettings(stored: unknown): Settings {
       : {}),
     ...(typeof s.maxPrAge === 'string' && s.maxPrAge ? { maxPrAge: s.maxPrAge } : {}),
     ...(typeof s.autoCloseRemoved === 'boolean' ? { autoCloseRemoved: s.autoCloseRemoved } : {}),
+    ...(typeof s.badgeEnabled === 'boolean' ? { badgeEnabled: s.badgeEnabled } : {}),
     ...(typeof s.badgeIncludeTeamReview === 'boolean'
       ? { badgeIncludeTeamReview: s.badgeIncludeTeamReview }
       : {}),

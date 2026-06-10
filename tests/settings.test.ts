@@ -47,6 +47,11 @@ describe('mergeSettings', () => {
     expect(mergeSettings({ badgeIncludeTeamReview: true }).badgeIncludeTeamReview).toBe(true);
   });
 
+  it('defaults the badge on and respects disabling it', () => {
+    expect(defaultSettings().badgeEnabled).toBe(true);
+    expect(mergeSettings({ badgeEnabled: false }).badgeEnabled).toBe(false);
+  });
+
   it('defaults sort to repo then created-oldest', () => {
     expect(defaultSettings().sortCriteria).toEqual([
       { key: 'repo', dir: 'asc' },
