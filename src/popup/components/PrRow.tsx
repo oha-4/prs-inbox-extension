@@ -28,7 +28,7 @@ export function PrRow({ pr }: { pr: PullRequest }): React.JSX.Element {
         <span className="flex items-center gap-1.5">
           {unread && (
             <span
-              className="bg-unread size-1.5 shrink-0 animate-pulse rounded-full shadow-[0_0_5px_var(--unread)]"
+              className="bg-unread size-1.5 shrink-0 rounded-full"
               aria-label="unread"
             />
           )}
