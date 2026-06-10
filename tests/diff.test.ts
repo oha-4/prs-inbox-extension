@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { computeTabSyncPlan, type DesiredTab, type ExistingTabInfo } from '../src/lib/diff';
+import {
+  computeTabSyncPlan,
+  forceExtraCloses,
+  type DesiredTab,
+  type ExistingTabInfo,
+} from '../src/lib/diff';
 import type { OwnedTab } from '../src/types';
 
 function desired(prId: string, opts: Partial<DesiredTab> = {}): DesiredTab {
@@ -159,5 +164,41 @@ describe('computeTabSyncPlan', () => {
       autoClose: true,
     });
     expect(plan.toClose).toEqual([]);
+  });
+});
+
+describe('forceExtraCloses', () => {
+  const managed = (tabId: number, url: string, groupName = 'Needs review') => ({
+    tabId,
+    url,
+    groupName,
+  });
+
+  it('closes user-added and non-PR tabs in managed groups', () => {
+    const closes = forceExtraCloses(
+      [
+        managed(1, 'https://github.com/acme/widgets/pull/1'), // desired, keep
+        managed(2, 'https://github.com/acme/widgets/pull/99'), // not desired, close
+        managed(3, 'https://example.com/'), // non-PR, close
+      ],
+      [desired('1')],
+    );
+    expect(closes.sort()).toEqual([2, 3]);
+  });
+
+  it('keeps a desired PR tab even on a sub-page URL', () => {
+    const closes = forceExtraCloses(
+      [managed(1, 'https://github.com/acme/widgets/pull/1/files')],
+      [desired('1')],
+    );
+    expect(closes).toEqual([]);
+  });
+
+  it('closes a desired PR tab that sits in the wrong group', () => {
+    const closes = forceExtraCloses(
+      [managed(1, 'https://github.com/acme/widgets/pull/1', 'Other group')],
+      [{ ...desired('1'), groupName: 'G' }],
+    );
+    expect(closes).toEqual([1]);
   });
 });

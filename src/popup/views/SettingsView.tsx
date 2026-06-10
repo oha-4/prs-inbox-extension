@@ -1,8 +1,20 @@
 import { useState } from 'react';
-import { Bell, Bug, Check, CloudDownload, Filter, FolderSync, Loader2 } from 'lucide-react';
-import type { Settings as SettingsType, TabGroupColor } from '../../types';
+import {
+  ArrowDownUp,
+  Bell,
+  Bug,
+  Check,
+  CloudDownload,
+  Filter,
+  FolderSync,
+  Loader2,
+  Plus,
+  X,
+  Zap,
+} from 'lucide-react';
+import type { Settings as SettingsType, SortKey, TabGroupColor } from '../../types';
 import { t } from '../../lib/i18n';
-import { SECTION_ORDER } from '../../lib/settings';
+import { MAX_SORT_CRITERIA, SECTION_ORDER, SORT_KEYS } from '../../lib/settings';
 import { sendMessage } from '../../messages';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -126,6 +138,20 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
           />
           {t('autoCloseLabel')}
         </label>
+        <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+          <Switch
+            checked={settings.forceAlignOnRefresh}
+            onCheckedChange={(checked) => update((s) => ({ ...s, forceAlignOnRefresh: checked }))}
+          />
+          {t('forceAlignOnRefreshLabel')}
+        </label>
+        <ForceAlignButton />
+      </section>
+
+      <section className="space-y-2">
+        <SectionHeader icon={ArrowDownUp}>{t('sortHeader')}</SectionHeader>
+        <p className="text-muted-foreground m-0 text-[11px]">{t('sortHint')}</p>
+        <SortEditor settings={settings} update={update} />
       </section>
 
       <section className="space-y-2">
@@ -217,6 +243,117 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
  * Chromeのタブグループ色ピッカー風: 3×3グリッドの丸、選択中は二重丸。
  * 色名テキストを出さないのでローカリゼーション不要。
  */
+function sortKeyLabel(key: SortKey): string {
+  return t(
+    key === 'repo' ? 'sortKeyRepo' : key === 'created' ? 'sortKeyCreated' : 'sortKeyUpdated',
+  );
+}
+
+function sortDirLabel(key: SortKey, dir: 'asc' | 'desc'): string {
+  if (key === 'repo') return dir === 'asc' ? 'A→Z' : 'Z→A';
+  return t(dir === 'asc' ? 'sortDirOld' : 'sortDirNew');
+}
+
+function SortEditor({ settings, update }: Props): React.JSX.Element {
+  const criteria = settings.sortCriteria;
+  const setCriteria = (next: typeof criteria): void =>
+    update((s) => ({ ...s, sortCriteria: next }));
+  const unused = SORT_KEYS.filter((k) => !criteria.some((c) => c.key === k));
+
+  return (
+    <div className="space-y-1.5">
+      {criteria.map((c, idx) => {
+        const usedByOthers = new Set(criteria.filter((_, i) => i !== idx).map((x) => x.key));
+        const options = SORT_KEYS.filter((k) => k === c.key || !usedByOthers.has(k));
+        return (
+          <div key={idx} className="flex items-center gap-1.5">
+            <span className="text-muted-foreground font-mono text-[10px]">{idx + 1}</span>
+            <Select
+              value={c.key}
+              onValueChange={(v) => {
+                const next = [...criteria];
+                next[idx] = { ...c, key: v as SortKey };
+                setCriteria(next);
+              }}
+            >
+              <SelectTrigger size="sm" className="flex-1">
+                <SelectValue>{sortKeyLabel(c.key)}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {sortKeyLabel(k)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-20 justify-center px-2 text-[11px]"
+              onClick={() => {
+                const next = [...criteria];
+                next[idx] = { ...c, dir: c.dir === 'asc' ? 'desc' : 'asc' };
+                setCriteria(next);
+              }}
+            >
+              {sortDirLabel(c.key, c.dir)}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              aria-label={t('sortRemove')}
+              onClick={() => setCriteria(criteria.filter((_, i) => i !== idx))}
+            >
+              <X className="size-3.5" />
+            </Button>
+          </div>
+        );
+      })}
+      {criteria.length < MAX_SORT_CRITERIA && unused.length > 0 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground h-7 gap-1 px-2 text-[11px]"
+          onClick={() => setCriteria([...criteria, { key: unused[0]!, dir: 'asc' }])}
+        >
+          <Plus className="size-3" />
+          {t('sortAddLevel')}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function ForceAlignButton(): React.JSX.Element {
+  const [state, setState] = useState<'idle' | 'running' | 'done'>('idle');
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={state === 'running'}
+      onClick={() => {
+        setState('running');
+        void sendMessage<{ ok: boolean }>({ type: 'FORCE_SYNC' }).then(() => {
+          setState('done');
+          setTimeout(() => setState('idle'), 1500);
+        });
+      }}
+    >
+      {state === 'running' ? (
+        <Loader2 className="size-3 animate-spin" />
+      ) : state === 'done' ? (
+        <Check className="size-3 text-emerald-500" />
+      ) : (
+        <Zap className="size-3" />
+      )}
+      {t('forceAlignNow')}
+    </Button>
+  );
+}
+
 function ColorPicker({
   value,
   onChange,

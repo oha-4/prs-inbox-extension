@@ -46,4 +46,32 @@ describe('mergeSettings', () => {
     expect(defaultSettings().badgeIncludeTeamReview).toBe(false);
     expect(mergeSettings({ badgeIncludeTeamReview: true }).badgeIncludeTeamReview).toBe(true);
   });
+
+  it('defaults sort to repo then created-oldest', () => {
+    expect(defaultSettings().sortCriteria).toEqual([
+      { key: 'repo', dir: 'asc' },
+      { key: 'created', dir: 'asc' },
+    ]);
+  });
+
+  it('sanitizes stored sort: drops unknown/duplicate keys and caps at 2', () => {
+    const s = mergeSettings({
+      sortCriteria: [
+        { key: 'updated', dir: 'desc' },
+        { key: 'bogus', dir: 'asc' },
+        { key: 'updated', dir: 'asc' },
+        { key: 'repo', dir: 'asc' },
+        { key: 'created', dir: 'asc' },
+      ],
+    });
+    expect(s.sortCriteria).toEqual([
+      { key: 'updated', dir: 'desc' },
+      { key: 'repo', dir: 'asc' },
+    ]);
+  });
+
+  it('defaults forceAlignOnRefresh off', () => {
+    expect(defaultSettings().forceAlignOnRefresh).toBe(false);
+    expect(mergeSettings({ forceAlignOnRefresh: true }).forceAlignOnRefresh).toBe(true);
+  });
 });

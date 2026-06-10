@@ -1,4 +1,13 @@
-import type { SectionId, SectionSyncConfig, Settings } from '../types';
+import type { SectionId, SectionSyncConfig, Settings, SortCriterion, SortKey } from '../types';
+
+export const SORT_KEYS: SortKey[] = ['repo', 'created', 'updated'];
+export const MAX_SORT_CRITERIA = 2;
+
+/** 既定: repo順 → 作成が古い順 */
+const DEFAULT_SORT: SortCriterion[] = [
+  { key: 'repo', dir: 'asc' },
+  { key: 'created', dir: 'asc' },
+];
 
 export const KNOWN_SECTIONS: { id: SectionId; label: string }[] = [
   { id: 'review-requested', label: 'Needs your review' },
@@ -29,6 +38,8 @@ export function defaultSettings(): Settings {
     maxPrAge: '1m',
     autoCloseRemoved: true,
     badgeIncludeTeamReview: false,
+    sortCriteria: DEFAULT_SORT.map((c) => ({ ...c })),
+    forceAlignOnRefresh: false,
     sections,
     allowlist: [],
     blocklist: [],
@@ -50,6 +61,12 @@ export function mergeSettings(stored: unknown): Settings {
     ...(typeof s.autoCloseRemoved === 'boolean' ? { autoCloseRemoved: s.autoCloseRemoved } : {}),
     ...(typeof s.badgeIncludeTeamReview === 'boolean'
       ? { badgeIncludeTeamReview: s.badgeIncludeTeamReview }
+      : {}),
+    ...(typeof s.forceAlignOnRefresh === 'boolean'
+      ? { forceAlignOnRefresh: s.forceAlignOnRefresh }
+      : {}),
+    ...(Array.isArray(s.sortCriteria)
+      ? { sortCriteria: sanitizeSort(s.sortCriteria) }
       : {}),
     ...(Array.isArray(s.allowlist) ? { allowlist: s.allowlist.filter(isNonEmptyString) } : {}),
     ...(Array.isArray(s.blocklist) ? { blocklist: s.blocklist.filter(isNonEmptyString) } : {}),
@@ -75,4 +92,19 @@ export function mergeSettings(stored: unknown): Settings {
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === 'string' && v.trim().length > 0;
+}
+
+/** 保存済みソート設定を検証（未知キー・重複・不正方向を除去、最大2段） */
+function sanitizeSort(raw: unknown[]): SortCriterion[] {
+  const seen = new Set<SortKey>();
+  const out: SortCriterion[] = [];
+  for (const item of raw) {
+    if (out.length >= MAX_SORT_CRITERIA) break;
+    if (typeof item !== 'object' || item === null) continue;
+    const c = item as Partial<SortCriterion>;
+    if (!SORT_KEYS.includes(c.key as SortKey) || seen.has(c.key as SortKey)) continue;
+    seen.add(c.key as SortKey);
+    out.push({ key: c.key as SortKey, dir: c.dir === 'desc' ? 'desc' : 'asc' });
+  }
+  return out;
 }

@@ -50,6 +50,10 @@ chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
     void syncTabs().then(() => sendResponse({ ok: true }));
     return true;
   }
+  if (msg.type === 'FORCE_SYNC') {
+    void syncTabs(true).then(() => sendResponse({ ok: true }));
+    return true;
+  }
   if (msg.type === 'DUMP_DEBUG') {
     void runDebugDump().then((r) => sendResponse(r));
     return true;

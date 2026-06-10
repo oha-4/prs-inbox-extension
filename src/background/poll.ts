@@ -88,7 +88,7 @@ export async function runPoll(): Promise<void> {
     const snapshot: InboxSnapshot = { fetchedAt: Date.now(), sections, authState: 'ok' };
     await saveSnapshot(snapshot);
     await updateBadge(snapshot, settings);
-    await syncTabs();
+    await syncTabs(settings.forceAlignOnRefresh);
   } else {
     // 失敗時は既存キャッシュのPRデータを保持しつつ状態だけ更新（popupにバナー表示）
     const prev = await loadSnapshot();

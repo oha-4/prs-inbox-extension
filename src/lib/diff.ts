@@ -115,3 +115,32 @@ export function computeTabSyncPlan(input: {
 
   return plan;
 }
+
+/**
+ * 強制整列モードで閉じるべきタブ。管理対象グループ内にあって、そのグループの
+ * desired集合に一致しないタブ（ユーザーが足したタブ・PR以外・別グループ行きのPR）を
+ * すべて対象にする。所有関係は問わない。
+ */
+export function forceExtraCloses(
+  managedTabs: { tabId: number; url: string; groupName: string }[],
+  desired: { url: string; groupName: string }[],
+): number[] {
+  const desiredKeysByGroup = new Map<string, Set<string>>();
+  for (const d of desired) {
+    const key = prUrlKey(d.url);
+    if (!key) continue;
+    let set = desiredKeysByGroup.get(d.groupName);
+    if (!set) {
+      set = new Set();
+      desiredKeysByGroup.set(d.groupName, set);
+    }
+    set.add(key);
+  }
+  const close: number[] = [];
+  for (const t of managedTabs) {
+    const key = prUrlKey(t.url);
+    const set = desiredKeysByGroup.get(t.groupName);
+    if (!key || !set || !set.has(key)) close.push(t.tabId);
+  }
+  return close;
+}
