@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ExternalLink, GitPullRequestArrow, RefreshCw, Settings } from 'lucide-react';
+import { ExternalLink, RefreshCw, Settings } from 'lucide-react';
 import { filterSections } from '../lib/filters';
 import { t } from '../lib/i18n';
 import { SECTION_ORDER } from '../lib/settings';
@@ -50,15 +50,21 @@ export function App(): React.JSX.Element {
 
   return (
     <div className="bg-background text-foreground flex max-h-[580px] flex-col">
-      <header className="bg-background/85 sticky top-0 z-10 flex items-center justify-between border-b px-3 py-2 backdrop-blur-sm">
-        <span className="flex items-baseline gap-1.5">
-          <GitPullRequestArrow className="size-4 self-center text-emerald-500" />
-          <span className="text-sm font-semibold">PRs Inbox</span>
-          {snapshot && snapshot.fetchedAt > 0 && (
-            <span className="animate-in fade-in text-muted-foreground ml-0.5 text-[11px]">
-              {fetchedLabel(snapshot.fetchedAt)}
+      <header className="bg-background/70 sticky top-0 z-10 flex items-center justify-between border-b px-3.5 py-2.5 backdrop-blur-md">
+        <span className="flex items-center gap-2.5">
+          <span className="bg-signal signal-led size-2 shrink-0 rounded-full" aria-hidden />
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-[15px] leading-none font-extrabold tracking-[-0.02em]">
+              PRs<span className="text-signal">.</span>Inbox
             </span>
-          )}
+            <span className="font-mono text-muted-foreground mt-1 text-[9px] tracking-[0.16em] uppercase">
+              {snapshot && snapshot.fetchedAt > 0 ? (
+                <span className="animate-in fade-in">{fetchedLabel(snapshot.fetchedAt)}</span>
+              ) : (
+                'live'
+              )}
+            </span>
+          </span>
         </span>
         <span className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon" title={t('refresh')} onClick={refresh}>

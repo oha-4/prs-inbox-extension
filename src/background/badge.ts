@@ -13,5 +13,6 @@ export async function updateBadge(
     text = count > 0 ? String(count) : '';
   }
   await chrome.action.setBadgeText({ text });
-  await chrome.action.setBadgeBackgroundColor({ color: '#1f883d' });
+  await chrome.action.setBadgeBackgroundColor({ color: '#cdf24a' });
+  await chrome.action.setBadgeTextColor?.({ color: '#0a0b0e' });
 }

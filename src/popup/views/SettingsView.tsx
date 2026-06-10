@@ -43,8 +43,9 @@ function SectionHeader({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <h2 className="text-muted-foreground m-0 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase">
-      <Icon className="size-3.5" />
+    <h2 className="text-foreground font-display m-0 flex items-center gap-1.5 text-[11px] font-bold tracking-[0.08em] uppercase">
+      <span className="bg-signal h-3 w-0.5 shrink-0 rounded-full" aria-hidden />
+      <Icon className="text-muted-foreground size-3.5" />
       {children}
     </h2>
   );

@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* ── "Signal" — dark terminal-style live monitor ──────────────────────────
+   Committed dark theme (no light fallback): this is a control panel for a
+   Live Folder of PRs. One electric-lime accent used like a status LED. */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -21,71 +25,122 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --color-signal: var(--signal);
+
+  --radius-sm: calc(var(--radius) - 3px);
+  --radius-md: calc(var(--radius) - 1px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', monospace;
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-}
+  --radius: 0.5rem;
 
-/* popupはブラウザのテーマに追従（.dark クラスではなくメディアクエリ） */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.141 0.005 285.823);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.21 0.006 285.885);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.21 0.006 285.885);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.92 0.004 286.32);
-    --primary-foreground: oklch(0.21 0.006 285.885);
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.274 0.006 286.033);
-    --muted-foreground: oklch(0.705 0.015 286.067);
-    --accent: oklch(0.274 0.006 286.033);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.552 0.016 285.938);
-  }
+  /* warm ink scale */
+  --ink: #0a0b0e;
+  --ink-2: #101218;
+  --ink-3: #181b22;
+  --line: oklch(1 0 0 / 8%);
+  --line-strong: oklch(1 0 0 / 14%);
+  --text: #e9e8e1;
+  --text-dim: #888c97;
+
+  /* the one signal color */
+  --signal: #cdf24a;
+
+  --background: var(--ink);
+  --foreground: var(--text);
+  --card: var(--ink-2);
+  --card-foreground: var(--text);
+  --popover: var(--ink-2);
+  --popover-foreground: var(--text);
+  --primary: var(--signal);
+  --primary-foreground: #0a0b0e;
+  --secondary: var(--ink-3);
+  --secondary-foreground: var(--text);
+  --muted: var(--ink-3);
+  --muted-foreground: var(--text-dim);
+  --accent: var(--ink-3);
+  --accent-foreground: var(--text);
+  --destructive: oklch(0.62 0.2 18);
+  --destructive-foreground: #fff;
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: oklch(0.9 0.18 118 / 45%);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground m-0 w-[420px] text-[13px] antialiased;
+    @apply bg-background text-foreground m-0 w-[420px] antialiased;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    /* atmosphere: a faint signal glow up top + a fine dotted grid + grain */
+    background-image:
+      radial-gradient(120% 80% at 15% -10%, oklch(0.9 0.18 118 / 8%) 0%, transparent 55%),
+      radial-gradient(90% 60% at 100% 0%, oklch(0.62 0.16 250 / 6%) 0%, transparent 50%),
+      radial-gradient(var(--line) 0.5px, transparent 0.5px);
+    background-size:
+      100% 100%,
+      100% 100%,
+      16px 16px;
+    background-position:
+      0 0,
+      0 0,
+      -1px -1px;
   }
+
+  /* subtle film grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='80' height='80' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 9px;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
+    @apply rounded-full;
+    background: var(--line-strong);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(1 0 0 / 22%);
+    background-clip: padding-box;
+  }
+}
+
+@layer utilities {
+  /* breathing status LED for the "live" indicator */
+  @keyframes signal-breathe {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 0 oklch(0.9 0.18 118 / 55%),
+        0 0 6px 1px oklch(0.9 0.18 118 / 45%);
+      opacity: 1;
+    }
+    50% {
+      box-shadow:
+        0 0 0 4px oklch(0.9 0.18 118 / 0%),
+        0 0 10px 2px oklch(0.9 0.18 118 / 25%);
+      opacity: 0.75;
+    }
+  }
+  .signal-led {
+    animation: signal-breathe 2.4s ease-in-out infinite;
   }
 }
