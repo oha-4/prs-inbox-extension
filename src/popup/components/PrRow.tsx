@@ -1,9 +1,8 @@
+import { MessageSquare } from 'lucide-react';
 import type { PullRequest } from '../../types';
 import { formatRelative } from '../../lib/time';
+import { cn } from '@/lib/utils';
 import { StateIcon } from './StateIcon';
-
-const COMMENT_PATH =
-  'M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z';
 
 export function PrRow({ pr }: { pr: PullRequest }): React.JSX.Element {
   const open = (e: React.MouseEvent): void => {
@@ -12,33 +11,46 @@ export function PrRow({ pr }: { pr: PullRequest }): React.JSX.Element {
     if (!e.metaKey && !e.ctrlKey) window.close();
   };
   return (
-    <a className={`pr-row${pr.isReadByCurrentUser ? '' : ' unread'}`} href={pr.url} onClick={open}>
-      <StateIcon pr={pr} />
-      <span className="pr-main">
-        <span className="pr-title" title={pr.title}>
-          {pr.title}
+    <a
+      className="group hover:bg-accent/60 flex items-center gap-2.5 border-b px-3 py-2 no-underline transition-colors duration-150"
+      href={pr.url}
+      onClick={open}
+    >
+      <StateIcon pr={pr} className="transition-transform duration-200 group-hover:scale-110" />
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="flex items-center gap-1.5">
+          {!pr.isReadByCurrentUser && (
+            <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-blue-500" />
+          )}
+          <span
+            className={cn(
+              'text-foreground truncate text-[13px] leading-tight',
+              !pr.isReadByCurrentUser && 'font-semibold',
+            )}
+            title={pr.title}
+          >
+            {pr.title}
+          </span>
         </span>
-        <span className="pr-meta">
+        <span className="text-muted-foreground truncate text-[11px]">
           {pr.repoNameWithOwner}#{pr.number}
           {pr.authorLogin ? ` · ${pr.authorLogin}` : ''}
           {pr.updatedAt ? ` · ${formatRelative(pr.updatedAt)}` : ''}
         </span>
       </span>
+      {pr.commentCount > 0 && (
+        <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-[11px]">
+          <MessageSquare className="size-3" />
+          {pr.commentCount}
+        </span>
+      )}
       {pr.authorLogin && (
         <img
-          className="pr-avatar"
-          src={`https://github.com/${encodeURIComponent(pr.authorLogin)}.png?size=32`}
+          className="ring-border size-5 shrink-0 rounded-full ring-1 transition-transform duration-200 group-hover:scale-110"
+          src={`https://github.com/${encodeURIComponent(pr.authorLogin)}.png?size=40`}
           alt=""
           loading="lazy"
         />
-      )}
-      {pr.commentCount > 0 && (
-        <span className="pr-comments">
-          <svg viewBox="0 0 16 16" width="12" height="12">
-            <path fill="currentColor" d={COMMENT_PATH} />
-          </svg>
-          {pr.commentCount}
-        </span>
       )}
     </a>
   );

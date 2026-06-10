@@ -13,6 +13,8 @@ Zen Browserの「Live Folder」風に、GitHubの [PR Inbox](https://github.com/
 - **バッジ**: 「Needs your review」の件数をツールバーアイコンに表示
 - **多言語対応**: 日本語・英語（`chrome.i18n`、ブラウザのUI言語に追従。リソースは `public/_locales/`）
 
+UIは React + Tailwind CSS v4 + [shadcn/ui](https://ui.shadcn.com/)（`src/components/ui/`）+ [lucide](https://lucide.dev/) アイコンで構築。ライト/ダークテーマはブラウザ設定に自動追従する。
+
 ## インストール（開発版）
 
 Nodeのバージョンは `.tool-versions`（mise / asdf）で管理している。
