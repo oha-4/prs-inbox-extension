@@ -1,0 +1,98 @@
+{
+  "meta": { "title": "Pull requests" },
+  "payload": {
+    "pullsInboxSurfaceContentRoute": {
+      "results": [
+        {
+          "assignees": [
+            { "login": "alice", "avatarUrl": "https://avatars.githubusercontent.com/u/1?v=4" }
+          ],
+          "author": { "displayLogin": "alice" },
+          "authoredByAgent": null,
+          "category": "AWAITING_REVIEW",
+          "commentCount": 15,
+          "commitHeadShaChannel": "eyJjIjoicmVwbzoxOmNvbW1pdDphYWFhIiwidCI6MX0=--deadbeef",
+          "agentAttributedUser": null,
+          "createdAt": "2026-06-10T18:19:19+09:00",
+          "displayState": "OPEN",
+          "headSha": "0cb6efc0538d10853058cf5a3870d5049b1e07cc",
+          "labels": [],
+          "id": 3838188628,
+          "isDraft": false,
+          "isReadByCurrentUser": false,
+          "number": 152,
+          "permalink": "https://github.com/acme/widgets/pull/152",
+          "repoNameWithOwner": "acme/widgets",
+          "stackPosition": null,
+          "stackSize": null,
+          "state": "OPEN",
+          "title": "private resolved survey blocks を型付き配列にする",
+          "titleHtml": "private resolved survey blocks を型付き配列にする",
+          "updatedAt": "2026-06-10T22:58:37+09:00"
+        },
+        {
+          "assignees": [
+            { "login": "bob", "avatarUrl": "https://avatars.githubusercontent.com/u/2?v=4" }
+          ],
+          "author": { "displayLogin": "bob" },
+          "authoredByAgent": null,
+          "category": "AWAITING_REVIEW",
+          "commentCount": 54,
+          "commitHeadShaChannel": "eyJjIjoicmVwbzoyOmNvbW1pdDpiYmJiIiwidCI6Mn0=--cafebabe",
+          "agentAttributedUser": null,
+          "createdAt": "2026-06-08T17:43:00+09:00",
+          "displayState": "DRAFT",
+          "headSha": "429817e8988436108a36374df9f9d74989ad9835",
+          "labels": [
+            {
+              "color": "0052CC",
+              "description": "機能開発",
+              "id": 10949039068,
+              "name": "1.Feature development",
+              "nameHtml": "1.Feature development"
+            }
+          ],
+          "id": 3822192612,
+          "isDraft": true,
+          "isReadByCurrentUser": false,
+          "number": 126,
+          "permalink": "https://github.com/acme/widgets/pull/126",
+          "repoNameWithOwner": "acme/widgets",
+          "stackPosition": null,
+          "stackSize": null,
+          "state": "OPEN",
+          "title": "[FE] 管理者画面で配信期間(日時)を設定できる",
+          "titleHtml": "[FE] 管理者画面で配信期間(日時)を設定できる",
+          "updatedAt": "2026-06-10T20:29:01+09:00"
+        },
+        {
+          "assignees": [],
+          "author": { "displayLogin": "carol" },
+          "authoredByAgent": null,
+          "category": "AWAITING_REVIEW",
+          "commentCount": 9,
+          "commitHeadShaChannel": "eyJjIjoicmVwbzozOmNvbW1pdDpjY2NjIiwidCI6M30=--feedface",
+          "agentAttributedUser": null,
+          "createdAt": "2026-06-10T09:13:17+09:00",
+          "displayState": "OPEN",
+          "headSha": "675ae6ca07cd1f4285d7c2f360b6977b6e15be39",
+          "labels": [],
+          "id": 3835555862,
+          "isDraft": false,
+          "isReadByCurrentUser": true,
+          "number": 29,
+          "permalink": "https://github.com/acme/widgets-sdk/pull/29",
+          "repoNameWithOwner": "acme/widgets-sdk",
+          "stackPosition": null,
+          "stackSize": null,
+          "state": "OPEN",
+          "title": "backend #117 の resolved survey API に SDK を合わせる",
+          "titleHtml": "backend #117 の resolved survey API に SDK を合わせる",
+          "updatedAt": "2026-06-10T19:23:05+09:00"
+        }
+      ],
+      "pageInfo": { "currentPage": 1, "totalPages": 1, "totalCount": 3 },
+      "error": null
+    }
+  }
+}
