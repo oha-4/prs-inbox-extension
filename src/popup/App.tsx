@@ -51,13 +51,11 @@ export function App(): React.JSX.Element {
   return (
     <div className="bg-background text-foreground flex max-h-[580px] flex-col">
       <header className="bg-background/85 sticky top-0 z-10 flex items-center justify-between border-b px-3 py-2 backdrop-blur-sm">
-        <span className="flex items-baseline gap-2">
-          <span className="flex items-center gap-1.5 text-sm font-semibold">
-            <GitPullRequestArrow className="size-4 text-emerald-500" />
-            PRs Inbox
-          </span>
+        <span className="flex items-baseline gap-1.5">
+          <GitPullRequestArrow className="size-4 self-center text-emerald-500" />
+          <span className="text-sm font-semibold">PRs Inbox</span>
           {snapshot && snapshot.fetchedAt > 0 && (
-            <span className="animate-in fade-in text-muted-foreground text-[11px]">
+            <span className="animate-in fade-in text-muted-foreground ml-0.5 text-[11px]">
               {fetchedLabel(snapshot.fetchedAt)}
             </span>
           )}
