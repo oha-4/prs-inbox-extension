@@ -7,6 +7,7 @@ import { sendMessage } from '../../messages';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -99,32 +100,18 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
                         }))
                       }
                     />
-                    <Select
+                    <ColorPicker
                       value={cfg.groupColor}
-                      onValueChange={(v) =>
+                      onChange={(color) =>
                         update((s) => ({
                           ...s,
                           sections: {
                             ...s.sections,
-                            [id]: { ...cfg, groupColor: v as TabGroupColor },
+                            [id]: { ...cfg, groupColor: color },
                           },
                         }))
                       }
-                    >
-                      <SelectTrigger size="sm" aria-label="color">
-                        <SelectValue>
-                          <ColorDot color={cfg.groupColor} />
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(Object.keys(GROUP_COLORS) as TabGroupColor[]).map((c) => (
-                          <SelectItem key={c} value={c}>
-                            <ColorDot color={c} />
-                            {c}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </span>
                 )}
               </div>
@@ -212,12 +199,60 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
   );
 }
 
-function ColorDot({ color }: { color: TabGroupColor }): React.JSX.Element {
+/**
+ * Chromeのタブグループ色ピッカー風: 3×3グリッドの丸、選択中は二重丸。
+ * 色名テキストを出さないのでローカリゼーション不要。
+ */
+function ColorPicker({
+  value,
+  onChange,
+}: {
+  value: TabGroupColor;
+  onChange: (color: TabGroupColor) => void;
+}): React.JSX.Element {
+  const [open, setOpen] = useState(false);
   return (
-    <span
-      className="inline-block size-2.5 shrink-0 rounded-full"
-      style={{ backgroundColor: GROUP_COLORS[color] }}
-    />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={value}
+          className="border-input hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 flex h-7 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border bg-transparent shadow-xs transition-colors outline-none focus-visible:ring-[3px]"
+        >
+          <span
+            className="size-3.5 rounded-full"
+            style={{ backgroundColor: GROUP_COLORS[value] }}
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="grid grid-cols-3 gap-1">
+        {(Object.keys(GROUP_COLORS) as TabGroupColor[]).map((c) => {
+          const selected = c === value;
+          return (
+            <button
+              key={c}
+              type="button"
+              aria-label={c}
+              aria-pressed={selected}
+              onClick={() => {
+                onChange(c);
+                setOpen(false);
+              }}
+              className={cn(
+                'flex size-7 cursor-pointer items-center justify-center rounded-full border-2 transition-transform duration-150 outline-none hover:scale-110 focus-visible:scale-110',
+                selected ? 'p-px' : 'border-transparent',
+              )}
+              style={selected ? { borderColor: GROUP_COLORS[c] } : undefined}
+            >
+              <span
+                className="block size-4 rounded-full"
+                style={{ backgroundColor: GROUP_COLORS[c] }}
+              />
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
   );
 }
 
