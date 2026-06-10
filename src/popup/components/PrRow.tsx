@@ -28,14 +28,14 @@ export function PrRow({ pr }: { pr: PullRequest }): React.JSX.Element {
         <span className="flex items-center gap-1.5">
           {unread && (
             <span
-              className="bg-unread size-1.5 shrink-0 rounded-full shadow-[0_0_5px_var(--unread)]"
+              className="bg-unread size-1.5 shrink-0 animate-pulse rounded-full shadow-[0_0_5px_var(--unread)]"
               aria-label="unread"
             />
           )}
           <span
             className={cn(
-              'truncate text-[13px] leading-tight',
-              unread ? 'text-foreground font-semibold' : 'text-foreground/75 font-normal',
+              'text-foreground truncate text-[13px] leading-tight',
+              unread ? 'font-semibold' : 'font-normal',
             )}
             title={pr.title}
           >
