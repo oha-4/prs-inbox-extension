@@ -167,7 +167,11 @@ async function addTabToGroup(
   }
 }
 
-/** 非アクティブでタブを作成 → グループへ → メモリ節約のためdiscard（IDが変わり得る点に注意） */
+/**
+ * 非アクティブでタブを作成 → グループへ。
+ * discard はしない（裏でロードさせPRタイトルをタブに反映させるため）。
+ * メモリ圧迫時は Chrome が自動でタブを破棄する。
+ */
 async function createTabInGroup(
   d: DesiredTab,
   groupIds: Record<string, number>,
@@ -180,16 +184,8 @@ async function createTabInGroup(
       ...(windowId !== undefined ? { windowId } : {}),
     });
     if (tab.id === undefined) return null;
-    let tabId = tab.id;
-    await addTabToGroup(tabId, d.groupName, d.groupColor, groupIds);
-    try {
-      // discard はタブを新しいIDで置き換えることがある → 戻り値のIDを正とする
-      const discarded = await chrome.tabs.discard(tabId);
-      if (discarded?.id !== undefined) tabId = discarded.id;
-    } catch {
-      // discard失敗は無害（読み込み済みのまま）
-    }
-    return tabId;
+    await addTabToGroup(tab.id, d.groupName, d.groupColor, groupIds);
+    return tab.id;
   } catch (e) {
     console.warn('[prs-inbox] failed to create tab for', d.url, e);
     return null;
