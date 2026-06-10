@@ -26,6 +26,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-signal: var(--signal);
+  --color-unread: var(--unread);
 
   --radius-sm: calc(var(--radius) - 3px);
   --radius-md: calc(var(--radius) - 1px);
@@ -49,8 +50,10 @@
   --text: #e9e8e1;
   --text-dim: #888c97;
 
-  /* the one signal color */
-  --signal: #cdf24a;
+  /* brand/interaction green (matches the PR state icon) */
+  --signal: #29bf7e;
+  /* unread status — blue, deliberately distinct from the green */
+  --unread: #4493f8;
 
   --background: var(--ink);
   --foreground: var(--text);
@@ -70,7 +73,7 @@
   --destructive-foreground: #fff;
   --border: var(--line);
   --input: var(--line-strong);
-  --ring: oklch(0.9 0.18 118 / 45%);
+  --ring: oklch(0.74 0.13 162 / 45%);
 }
 
 @layer base {
@@ -84,7 +87,7 @@
     font-size: 13px;
     /* atmosphere: a faint signal glow up top + a fine dotted grid + grain */
     background-image:
-      radial-gradient(120% 80% at 15% -10%, oklch(0.9 0.18 118 / 8%) 0%, transparent 55%),
+      radial-gradient(120% 80% at 15% -10%, oklch(0.74 0.13 162 / 7%) 0%, transparent 55%),
       radial-gradient(90% 60% at 100% 0%, oklch(0.62 0.16 250 / 6%) 0%, transparent 50%),
       radial-gradient(var(--line) 0.5px, transparent 0.5px);
     background-size:
@@ -129,14 +132,14 @@
     0%,
     100% {
       box-shadow:
-        0 0 0 0 oklch(0.9 0.18 118 / 55%),
-        0 0 6px 1px oklch(0.9 0.18 118 / 45%);
+        0 0 0 0 oklch(0.74 0.13 162 / 55%),
+        0 0 6px 1px oklch(0.74 0.13 162 / 45%);
       opacity: 1;
     }
     50% {
       box-shadow:
-        0 0 0 4px oklch(0.9 0.18 118 / 0%),
-        0 0 10px 2px oklch(0.9 0.18 118 / 25%);
+        0 0 0 4px oklch(0.74 0.13 162 / 0%),
+        0 0 10px 2px oklch(0.74 0.13 162 / 25%);
       opacity: 0.75;
     }
   }

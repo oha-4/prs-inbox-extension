@@ -9,7 +9,7 @@ export function SectionList({ sections }: { sections: InboxSection[] }): React.J
     return (
       <div className="animate-in fade-in zoom-in-95 text-muted-foreground flex flex-col items-center gap-3 py-16 duration-300">
         <Inbox className="size-8" strokeWidth={1.25} />
-        <span className="font-mono text-[11px] tracking-wide">{t('inboxEmpty')}</span>
+        <span className="text-[13px]">{t('inboxEmpty')}</span>
       </div>
     );
   }

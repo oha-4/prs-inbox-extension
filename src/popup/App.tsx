@@ -54,7 +54,7 @@ export function App(): React.JSX.Element {
         <span className="flex items-center gap-2.5">
           <span className="bg-signal signal-led size-2 shrink-0 rounded-full" aria-hidden />
           <span className="flex flex-col leading-none">
-            <span className="font-display text-[15px] leading-none font-extrabold tracking-[-0.02em]">
+            <span className="font-sans text-[15px] leading-none font-bold tracking-[-0.01em]">
               PRs<span className="text-signal">.</span>Inbox
             </span>
             <span className="font-mono text-muted-foreground mt-1 text-[9px] tracking-[0.16em] uppercase">

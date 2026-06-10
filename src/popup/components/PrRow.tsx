@@ -16,28 +16,35 @@ export function PrRow({ pr }: { pr: PullRequest }): React.JSX.Element {
       className={cn(
         'group relative flex items-center gap-2.5 border-b py-2 pr-3.5 pl-3.5 no-underline transition-colors duration-150',
         'hover:bg-accent/50',
-        // left signal rail: hidden until hover (or always-on dim for unread)
-        'before:bg-signal before:absolute before:top-0 before:left-0 before:h-full before:w-[2px] before:origin-top before:transition-transform before:duration-200 before:content-[""]',
-        unread ? 'before:scale-y-100 before:opacity-40' : 'before:scale-y-0',
-        'hover:before:scale-y-100 hover:before:opacity-100',
+        // left rail: pure hover affordance (brand green), independent of read state
+        'before:bg-signal before:absolute before:top-0 before:left-0 before:h-full before:w-[2px] before:origin-top before:scale-y-0 before:transition-transform before:duration-200 before:content-[""]',
+        'hover:before:scale-y-100',
       )}
       href={pr.url}
       onClick={open}
     >
       <StateIcon pr={pr} className="transition-transform duration-200 group-hover:scale-110" />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span
-          className={cn(
-            'truncate text-[13px] leading-tight',
-            unread ? 'text-foreground font-semibold' : 'text-foreground/80 font-normal',
+        <span className="flex items-center gap-1.5">
+          {unread && (
+            <span
+              className="bg-unread size-1.5 shrink-0 rounded-full shadow-[0_0_5px_var(--unread)]"
+              aria-label="unread"
+            />
           )}
-          title={pr.title}
-        >
-          {pr.title}
+          <span
+            className={cn(
+              'truncate text-[13px] leading-tight',
+              unread ? 'text-foreground font-semibold' : 'text-foreground/75 font-normal',
+            )}
+            title={pr.title}
+          >
+            {pr.title}
+          </span>
         </span>
         <span className="text-muted-foreground flex items-center gap-1.5 font-mono text-[10px] leading-none">
           <span className="text-foreground/55 truncate">{pr.repoNameWithOwner}</span>
-          <span className="text-signal/70">#{pr.number}</span>
+          <span className="text-foreground/45">#{pr.number}</span>
           {pr.authorLogin && (
             <>
               <span className="opacity-40">·</span>
