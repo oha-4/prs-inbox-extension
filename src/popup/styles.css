@@ -1,9 +1,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* ── "Signal" — dark terminal-style live monitor ──────────────────────────
-   Committed dark theme (no light fallback): this is a control panel for a
-   Live Folder of PRs. One electric-lime accent used like a status LED. */
+/* ── "Signal" — terminal-style live monitor ───────────────────────────────
+   A control panel for a Live Folder of PRs. One green accent used like a
+   status LED, blue for unread. Light (paper) + dark (ink), following the OS. */
 
 @theme inline {
   --color-background: var(--background);
@@ -41,39 +41,59 @@
 :root {
   --radius: 0.5rem;
 
-  /* warm ink scale */
-  --ink: #0a0b0e;
-  --ink-2: #101218;
-  --ink-3: #181b22;
-  --line: oklch(1 0 0 / 8%);
-  --line-strong: oklch(1 0 0 / 14%);
-  --text: #e9e8e1;
-  --text-dim: #888c97;
-
-  /* brand/interaction green (matches the PR state icon) */
+  /* brand green (matches the PR state icon) + unread blue — same in both themes */
   --signal: #29bf7e;
-  /* unread status — blue, deliberately distinct from the green */
   --unread: #4493f8;
 
-  --background: var(--ink);
-  --foreground: var(--text);
-  --card: var(--ink-2);
-  --card-foreground: var(--text);
-  --popover: var(--ink-2);
-  --popover-foreground: var(--text);
+  /* light — warm paper */
+  --line: oklch(0 0 0 / 9%);
+  --line-strong: oklch(0 0 0 / 14%);
+  --background: #fbfbf8;
+  --foreground: #1b1c19;
+  --card: #ffffff;
+  --card-foreground: #1b1c19;
+  --popover: #ffffff;
+  --popover-foreground: #1b1c19;
   --primary: var(--signal);
-  --primary-foreground: #0a0b0e;
-  --secondary: var(--ink-3);
-  --secondary-foreground: var(--text);
-  --muted: var(--ink-3);
-  --muted-foreground: var(--text-dim);
-  --accent: var(--ink-3);
-  --accent-foreground: var(--text);
-  --destructive: oklch(0.62 0.2 18);
+  --primary-foreground: #062b1c;
+  --secondary: #efeee8;
+  --secondary-foreground: #1b1c19;
+  --muted: #efeee8;
+  --muted-foreground: #65696f;
+  --accent: #eceae3;
+  --accent-foreground: #1b1c19;
+  --destructive: oklch(0.58 0.22 20);
   --destructive-foreground: #fff;
   --border: var(--line);
   --input: var(--line-strong);
-  --ring: oklch(0.74 0.13 162 / 45%);
+  --ring: oklch(0.7 0.13 162 / 40%);
+}
+
+/* dark — warm ink */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --line: oklch(1 0 0 / 8%);
+    --line-strong: oklch(1 0 0 / 14%);
+    --background: #0a0b0e;
+    --foreground: #e9e8e1;
+    --card: #101218;
+    --card-foreground: #e9e8e1;
+    --popover: #101218;
+    --popover-foreground: #e9e8e1;
+    --primary: var(--signal);
+    --primary-foreground: #0a0b0e;
+    --secondary: #181b22;
+    --secondary-foreground: #e9e8e1;
+    --muted: #181b22;
+    --muted-foreground: #888c97;
+    --accent: #181b22;
+    --accent-foreground: #e9e8e1;
+    --destructive: oklch(0.62 0.2 18);
+    --destructive-foreground: #fff;
+    --border: var(--line);
+    --input: var(--line-strong);
+    --ring: oklch(0.74 0.13 162 / 45%);
+  }
 }
 
 @layer base {
