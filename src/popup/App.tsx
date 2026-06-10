@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, RefreshCw, Settings } from 'lucide-react';
 import { filterSections } from '../lib/filters';
 import { t } from '../lib/i18n';
@@ -14,8 +14,19 @@ import { useSnapshot } from './hooks/useSnapshot';
 import { SettingsView } from './views/SettingsView';
 
 function fetchedLabel(fetchedAt: number): string {
-  const rel = formatRelative(new Date(fetchedAt).toISOString());
-  return rel === 'now' ? t('updatedJustNow') : t('updatedAgo', rel);
+  const diff = Date.now() - fetchedAt;
+  if (diff < 10_000) return t('updatedJustNow');
+  if (diff < 60_000) return t('updatedWithinMinute');
+  return t('updatedAgo', formatRelative(new Date(fetchedAt).toISOString()));
+}
+
+/** ポップアップを開いている間、相対時刻を毎秒生かす */
+function useTick(intervalMs: number): void {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
 }
 
 function LoadingSkeleton(): React.JSX.Element {
@@ -39,6 +50,7 @@ export function App(): React.JSX.Element {
   const { snapshot, refreshing, refresh } = useSnapshot();
   const { settings, update } = useSettings();
   const [view, setView] = useState<'list' | 'settings'>('list');
+  useTick(1000);
 
   const sections = useMemo(() => {
     if (!snapshot || !settings) return [];
