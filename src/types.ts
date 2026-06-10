@@ -65,6 +65,8 @@ export interface Settings {
   /** /pulls/inbox/queries の max_pr_age（'1m' | '1y' を確認済み） */
   maxPrAge: string;
   autoCloseRemoved: boolean;
+  /** バッジ件数に team-review-requested も含めるか（既定: review-requested のみ） */
+  badgeIncludeTeamReview: boolean;
   sections: Record<SectionId, SectionSyncConfig>;
   /** 'owner' または 'owner/repo'。空なら全許可 */
   allowlist: string[];

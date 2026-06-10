@@ -25,6 +25,8 @@
   },
   "groupNamePlaceholder": { "message": "グループ名" },
   "autoCloseLabel": { "message": "Inboxから消えたPRのタブを自動で閉じる" },
+  "badgeHeader": { "message": "ツールバーバッジ" },
+  "badgeIncludeTeamLabel": { "message": "件数に「チームのレビュー」も含める" },
   "fetchHeader": { "message": "取得" },
   "pollIntervalLabel": { "message": "ポーリング間隔（分）" },
   "maxPrAgeLabel": { "message": "PRの最大経過時間" },

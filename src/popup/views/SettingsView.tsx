@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bug, Check, CloudDownload, Filter, FolderSync, Loader2 } from 'lucide-react';
+import { Bell, Bug, Check, CloudDownload, Filter, FolderSync, Loader2 } from 'lucide-react';
 import type { Settings as SettingsType, TabGroupColor } from '../../types';
 import { t } from '../../lib/i18n';
 import { SECTION_ORDER } from '../../lib/settings';
@@ -125,6 +125,19 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
             onCheckedChange={(checked) => update((s) => ({ ...s, autoCloseRemoved: checked }))}
           />
           {t('autoCloseLabel')}
+        </label>
+      </section>
+
+      <section className="space-y-2">
+        <SectionHeader icon={Bell}>{t('badgeHeader')}</SectionHeader>
+        <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+          <Switch
+            checked={settings.badgeIncludeTeamReview}
+            onCheckedChange={(checked) =>
+              update((s) => ({ ...s, badgeIncludeTeamReview: checked }))
+            }
+          />
+          {t('badgeIncludeTeamLabel')}
         </label>
       </section>
 

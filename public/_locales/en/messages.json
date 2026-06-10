@@ -25,6 +25,8 @@
   },
   "groupNamePlaceholder": { "message": "Group name" },
   "autoCloseLabel": { "message": "Automatically close tabs for PRs that left the inbox" },
+  "badgeHeader": { "message": "Toolbar badge" },
+  "badgeIncludeTeamLabel": { "message": "Include team review requests in the count" },
   "fetchHeader": { "message": "Fetching" },
   "pollIntervalLabel": { "message": "Polling interval (minutes)" },
   "maxPrAgeLabel": { "message": "Maximum PR age" },

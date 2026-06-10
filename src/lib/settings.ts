@@ -28,6 +28,7 @@ export function defaultSettings(): Settings {
     pollIntervalMinutes: 5,
     maxPrAge: '1m',
     autoCloseRemoved: true,
+    badgeIncludeTeamReview: false,
     sections,
     allowlist: [],
     blocklist: [],
@@ -47,6 +48,9 @@ export function mergeSettings(stored: unknown): Settings {
       : {}),
     ...(typeof s.maxPrAge === 'string' && s.maxPrAge ? { maxPrAge: s.maxPrAge } : {}),
     ...(typeof s.autoCloseRemoved === 'boolean' ? { autoCloseRemoved: s.autoCloseRemoved } : {}),
+    ...(typeof s.badgeIncludeTeamReview === 'boolean'
+      ? { badgeIncludeTeamReview: s.badgeIncludeTeamReview }
+      : {}),
     ...(Array.isArray(s.allowlist) ? { allowlist: s.allowlist.filter(isNonEmptyString) } : {}),
     ...(Array.isArray(s.blocklist) ? { blocklist: s.blocklist.filter(isNonEmptyString) } : {}),
     ...(typeof s.debugMode === 'boolean' ? { debugMode: s.debugMode } : {}),

@@ -41,4 +41,9 @@ describe('mergeSettings', () => {
     expect(mergeSettings({ pollIntervalMinutes: 0 }).pollIntervalMinutes).toBe(5);
     expect(mergeSettings({ pollIntervalMinutes: -3 }).pollIntervalMinutes).toBe(5);
   });
+
+  it('defaults badgeIncludeTeamReview off and respects the stored value', () => {
+    expect(defaultSettings().badgeIncludeTeamReview).toBe(false);
+    expect(mergeSettings({ badgeIncludeTeamReview: true }).badgeIncludeTeamReview).toBe(true);
+  });
 });
