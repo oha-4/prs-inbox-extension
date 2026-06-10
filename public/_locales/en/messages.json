@@ -1,0 +1,41 @@
+{
+  "extName": { "message": "PRs Inbox for GitHub" },
+  "extDescription": {
+    "message": "Shows your GitHub PR inbox in a popup and syncs it to Chrome tab groups, Live Folder style."
+  },
+  "refresh": { "message": "Refresh" },
+  "settings": { "message": "Settings" },
+  "openInbox": { "message": "Open github.com/pulls/inbox" },
+  "loading": { "message": "Loading…" },
+  "updatedJustNow": { "message": "updated just now" },
+  "updatedAgo": {
+    "message": "updated $TIME$ ago",
+    "placeholders": { "time": { "content": "$1" } }
+  },
+  "inboxEmpty": { "message": "Your inbox is empty 🎉" },
+  "truncated": { "message": "truncated at 100" },
+  "notLoggedIn": { "message": "You are not logged in to GitHub." },
+  "logIn": { "message": "Log in" },
+  "rateLimited": { "message": "Rate limited. Polling will resume automatically." },
+  "fetchFailed": { "message": "Failed to fetch" },
+  "tabGroupSyncHeader": { "message": "Tab group sync" },
+  "tabGroupSyncHint": {
+    "message": "PRs in enabled sections are synced to tab groups. Sections sharing a group name are merged into one group."
+  },
+  "groupNamePlaceholder": { "message": "Group name" },
+  "autoCloseLabel": { "message": "Automatically close tabs for PRs that left the inbox" },
+  "fetchHeader": { "message": "Fetching" },
+  "pollIntervalLabel": { "message": "Polling interval (minutes)" },
+  "maxPrAgeLabel": { "message": "Maximum PR age" },
+  "age1m": { "message": "1 month" },
+  "age1y": { "message": "1 year" },
+  "filtersHeader": { "message": "Filters (owner or owner/repo, one per line)" },
+  "allowlistLabel": { "message": "Allowlist (empty = show everything)" },
+  "blocklistLabel": { "message": "Blocklist" },
+  "filterPlaceholder": { "message": "e.g.\nmy-org\nmy-org/some-repo" },
+  "debugHeader": { "message": "Debug" },
+  "debugModeLabel": { "message": "Debug mode (save raw responses when parsing fails)" },
+  "dumpButton": { "message": "Dump raw responses for all sections" },
+  "dumpRunning": { "message": "Fetching…" },
+  "dumpDone": { "message": "Saved (debugDump in storage.local)" }
+}
