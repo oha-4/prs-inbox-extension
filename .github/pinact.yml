@@ -4,3 +4,11 @@ version: 3
 # 公開から 7 日未満のリリースには pin しない（タグ差し替え攻撃への保険）。
 min_age:
   value: 7
+
+rules:
+  # codecov-action v7.0.0 (2026-06-07公開) はGPG鍵取得の修正で、旧版はCLI署名検証で必ず落ちる。
+  # min_age経過を待てないため個別免除。2026-06-15以降は不要なので削除してよい。
+  - min_age: 0
+    conditions:
+      - expr: |
+          ActionName == "codecov/codecov-action"
