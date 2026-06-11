@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # pinact の min_age(7日) と揃える: 公開直後のリリースへ即バンプして
+    # CI の verify-min-age が落ちるのを防ぐ
+    cooldown:
+      default-days: 7

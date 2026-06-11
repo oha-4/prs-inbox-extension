@@ -20,8 +20,13 @@ PATH, run through mise: `mise exec node@24.16.0 -- <cmd>`.
 npm run dev         # vite build --watch (crxjs)
 npm run build       # production build -> dist/
 npm run typecheck   # tsc --noEmit (strict)
-npm run test        # vitest (pure logic only)
+npm run lint        # biome check (format + lint; lint:fix to apply)
+npm run test        # vitest (pure logic only; test:coverage for lcov)
 ```
+
+CI (`.github/workflows/ci.yml`): biome / vitest+codecov / pinact (actions must be
+SHA-pinned, releases ≥7 days old — see `.github/pinact.yml`). Tag `v*` pushes
+build and attach the extension zip to a GitHub Release (`release.yml`).
 
 Load the unpacked `dist/` at `chrome://extensions` (developer mode). Tab-group /
 tab manipulation can only be verified in a real browser with a logged-in

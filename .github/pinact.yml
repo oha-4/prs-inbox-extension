@@ -1,0 +1,6 @@
+version: 3
+
+# min_age は pinact >= v4.0.0 の機能（.tool-versions で 4.0.0 を固定）。
+# 公開から 7 日未満のリリースには pin しない（タグ差し替え攻撃への保険）。
+min_age:
+  value: 7
