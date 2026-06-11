@@ -67,7 +67,7 @@ export function PrRow({ pr }: { pr: PullRequest }): React.JSX.Element {
       )}
       {pr.authorLogin && (
         <img
-          className="ring-border size-5 shrink-0 rounded-full ring-1 grayscale transition-all duration-200 group-hover:grayscale-0"
+          className="ring-border size-5 shrink-0 rounded-full ring-1"
           src={`https://github.com/${encodeURIComponent(pr.authorLogin)}.png?size=40`}
           alt=""
           loading="lazy"
