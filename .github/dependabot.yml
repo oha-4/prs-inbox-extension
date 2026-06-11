@@ -7,6 +7,10 @@ updates:
     # .npmrc の min-release-age=7 と揃える
     cooldown:
       default-days: 7
+    ignore:
+      # @types/node のメジャーは実行Node (.tool-versions) と揃えて手動で上げる
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
