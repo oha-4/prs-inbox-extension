@@ -2,6 +2,8 @@
 
 Zen Browserの「Live Folder」風に、GitHubの [PR Inbox](https://github.com/pulls/inbox) をChromeのタブグループへ自動同期する拡張機能。ポップアップではInboxのコンパクトなリスト表示も提供する。
 
+サービスサイト（利用規約・プライバシーポリシー）: <https://oha-4.github.io/prs-inbox-extension/>（ソースは `site/`）
+
 ## 機能
 
 - **ポップアップ**: Inboxの全セクション（Needs your review / Your drafts / Waiting for review など）をコンパクトに一覧表示。未読は太字、クリックでPRを開く

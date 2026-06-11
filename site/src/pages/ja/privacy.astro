@@ -1,0 +1,96 @@
+---
+import { REPO_URL, ui } from '../../i18n/ui';
+import Base from '../../layouts/Base.astro';
+
+const t = ui.ja;
+---
+
+<Base
+  title={`プライバシーポリシー — ${t.siteName}`}
+  description="Chrome拡張「PRs Inbox for GitHub」のプライバシーポリシー。"
+  lang="ja"
+>
+  <article class="prose-doc mx-auto max-w-2xl py-8">
+    <h1 class="font-display text-3xl font-bold tracking-tight">プライバシーポリシー</h1>
+    <p class="text-muted-foreground mt-2 font-mono text-xs">最終更新日: 2026年6月11日</p>
+
+    <div class="bg-card mt-8 rounded-lg border p-5">
+      <p class="m-0 text-sm leading-relaxed">
+        <strong>要約:</strong> PRs Inbox for GitHub
+        はすべてブラウザの中だけで動作します。アナリティクスもテレメトリも独自サーバーもありません。通信先は
+        <code>github.com</code> のみで、保存されたデータがブラウザの外に出ることはありません。
+      </p>
+    </div>
+
+    <h2>1. 拡張機能がアクセスするデータ</h2>
+    <p>
+      本拡張は、すでにログイン済みの github.com セッション（ブラウザのCookie）を利用して
+      <code>github.com/pulls/inbox</code>
+      からあなたのプルリクエストInboxを取得します。パスワードやPersonal Access
+      Tokenなどの認証情報を要求・参照・保存することは一切ありません。
+    </p>
+
+    <h2>2. 通信先</h2>
+    <p>
+      本拡張が通信するホストは、唯一のhost permissionである
+      <code>https://github.com</code>
+      のみです。アナリティクスサービス・クラッシュレポーター・CDNなど、第三者への通信は一切ありません。
+    </p>
+
+    <h2>3. ローカルに保存されるデータ</h2>
+    <p>すべてのデータはChromeの拡張機能ストレージ内に保存されます:</p>
+    <ul>
+      <li>
+        <strong>設定</strong>（有効なセクション、タブグループの名前と色、フィルタ、更新間隔）は
+        <code>chrome.storage.sync</code>
+        に保存され、あなた自身がログインしているブラウザ間でChromeが同期することがあります。
+      </li>
+      <li>
+        <strong>最新のInboxスナップショット</strong>（PRのタイトル・リポジトリ・URL・日時）は
+        <code>chrome.storage.local</code> に保存され、ポップアップの即時表示に使われます。
+      </li>
+      <li>
+        <strong>タブ所有権のレジストリ</strong>は <code>chrome.storage.session</code>
+        に保存され、ブラウザ終了時に消去されます。
+      </li>
+      <li>
+        <strong>生レスポンスのデバッグダンプ</strong
+        >は、設定でデバッグモードを明示的に有効化した場合にのみ保存されます。
+      </li>
+    </ul>
+    <p>拡張機能をアンインストールすると、これらのデータはすべて削除されます。</p>
+
+    <h2>4. 要求する権限とその理由</h2>
+    <ul>
+      <li><code>tabs</code>・<code>tabGroups</code> — 同期タブグループの作成・更新のため。</li>
+      <li><code>alarms</code> — Inboxの定期更新のため。</li>
+      <li><code>storage</code> — 上記の設定・スナップショットの保存のため。</li>
+      <li>
+        <code>https://github.com/*</code> へのhost permission —
+        既存セッションでPR Inboxを取得するため。
+      </li>
+    </ul>
+
+    <h2>5. Limited Use（限定的な使用）</h2>
+    <p>
+      本拡張によるデータの使用は、Chrome Web StoreのUser Data Policy（Limited
+      Use要件を含む）に従います。データは本サイトに記載された単一のユーザー向け機能の提供のためだけに使用され、販売・第三者への提供・広告目的・与信判断などに使われることは一切ありません。
+    </p>
+
+    <h2>6. このウェブサイトについて</h2>
+    <p>
+      本サイトはGitHub
+      Pagesでホストされる静的ページです。Cookieの設定やアナリティクスの実行はありません。ホスティングの一環としてGitHub
+      Pagesがリクエスト（IPアドレス等）を記録することがあります。詳細は
+      <a href="https://docs.github.com/ja/site-policy/privacy-policies/github-general-privacy-statement"
+        rel="noopener">GitHubのプライバシーステートメント</a
+      >をご覧ください。
+    </p>
+
+    <h2>7. 改定と連絡先</h2>
+    <p>
+      本ポリシーの変更は、更新日とともに本ページで公開します。質問・懸念は
+      <a href={`${REPO_URL}/issues`} rel="noopener">GitHubのIssueトラッカー</a>までお寄せください。
+    </p>
+  </article>
+</Base>

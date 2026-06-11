@@ -1,0 +1,196 @@
+@import "tailwindcss";
+
+/* ── "Signal" — terminal-style live monitor ───────────────────────────────
+   Ported from the extension popup (src/popup/styles.css), scaled up for a
+   full page. One green accent used like a status LED, blue for unread.
+   Light (paper) + dark (ink), following the OS. */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-line-strong: var(--line-strong);
+  --color-ring: var(--ring);
+  --color-signal: var(--signal);
+  --color-unread: var(--unread);
+
+  --radius-sm: calc(var(--radius) - 3px);
+  --radius-md: calc(var(--radius) - 1px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", monospace;
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* brand green (matches the PR state icon) + unread blue — same in both themes */
+  --signal: #29bf7e;
+  --unread: #4493f8;
+
+  /* light — warm paper */
+  --line: oklch(0 0 0 / 9%);
+  --line-strong: oklch(0 0 0 / 14%);
+  --background: #fbfbf8;
+  --foreground: #1b1c19;
+  --card: #ffffff;
+  --card-foreground: #1b1c19;
+  --muted: #efeee8;
+  --muted-foreground: #65696f;
+  --accent: #eceae3;
+  --accent-foreground: #1b1c19;
+  --border: var(--line);
+  --ring: oklch(0.7 0.13 162 / 40%);
+}
+
+/* dark — warm ink */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --line: oklch(1 0 0 / 8%);
+    --line-strong: oklch(1 0 0 / 14%);
+    --background: #0a0b0e;
+    --foreground: #e9e8e1;
+    --card: #101218;
+    --card-foreground: #e9e8e1;
+    --muted: #181b22;
+    --muted-foreground: #888c97;
+    --accent: #181b22;
+    --accent-foreground: #e9e8e1;
+    --border: var(--line);
+    --ring: oklch(0.74 0.13 162 / 45%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground m-0 min-h-screen antialiased;
+    font-family: var(--font-sans);
+    /* atmosphere: a faint signal glow up top + a fine dotted grid + grain */
+    background-image:
+      radial-gradient(120% 80% at 15% -10%, oklch(0.74 0.13 162 / 7%) 0%, transparent 55%),
+      radial-gradient(90% 60% at 100% 0%, oklch(0.62 0.16 250 / 6%) 0%, transparent 50%),
+      radial-gradient(var(--line) 0.5px, transparent 0.5px);
+    background-size:
+      100% 100%,
+      100% 100%,
+      16px 16px;
+    background-position:
+      0 0,
+      0 0,
+      -1px -1px;
+    background-attachment: fixed;
+  }
+
+  /* subtle film grain overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='80' height='80' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* long-form legal text (terms / privacy) */
+  .prose-doc {
+    @apply text-[0.95rem] leading-7;
+  }
+  .prose-doc h2 {
+    font-family: var(--font-display);
+    @apply mt-10 mb-3 text-xl font-semibold tracking-tight;
+  }
+  .prose-doc p {
+    @apply my-3;
+  }
+  .prose-doc ul {
+    @apply my-3 list-disc space-y-1.5 pl-6;
+  }
+  .prose-doc a {
+    @apply text-signal underline underline-offset-4 hover:opacity-80;
+  }
+  .prose-doc code {
+    font-family: var(--font-mono);
+    @apply bg-muted rounded-sm px-1.5 py-0.5 text-[0.85em];
+  }
+}
+
+@layer utilities {
+  /* breathing status LED for the "live" indicator */
+  @keyframes signal-breathe {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 0 oklch(0.74 0.13 162 / 55%),
+        0 0 6px 1px oklch(0.74 0.13 162 / 45%);
+      opacity: 1;
+    }
+    50% {
+      box-shadow:
+        0 0 0 4px oklch(0.74 0.13 162 / 0%),
+        0 0 10px 2px oklch(0.74 0.13 162 / 25%);
+      opacity: 0.75;
+    }
+  }
+  .signal-led {
+    animation: signal-breathe 2.4s ease-in-out infinite;
+  }
+
+  /* staggered page-load reveal */
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .rise {
+    animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .rise-1 {
+    animation-delay: 0.05s;
+  }
+  .rise-2 {
+    animation-delay: 0.15s;
+  }
+  .rise-3 {
+    animation-delay: 0.25s;
+  }
+  .rise-4 {
+    animation-delay: 0.35s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .signal-led,
+    .rise {
+      animation: none;
+    }
+  }
+}

@@ -1,0 +1,98 @@
+---
+import { REPO_URL, ui } from '../i18n/ui';
+import Base from '../layouts/Base.astro';
+
+const t = ui.en;
+---
+
+<Base
+  title={`Privacy Policy — ${t.siteName}`}
+  description="Privacy policy for the PRs Inbox for GitHub Chrome extension."
+  lang="en"
+>
+  <article class="prose-doc mx-auto max-w-2xl py-8">
+    <h1 class="font-display text-3xl font-bold tracking-tight">Privacy Policy</h1>
+    <p class="text-muted-foreground mt-2 font-mono text-xs">Last updated: June 11, 2026</p>
+
+    <div class="bg-card mt-8 rounded-lg border p-5">
+      <p class="m-0 text-sm leading-relaxed">
+        <strong>In short:</strong> PRs Inbox for GitHub runs entirely in your browser. It has no
+        analytics, no telemetry, and no servers of its own. The only host it ever talks to is
+        <code>github.com</code>, and nothing it stores leaves your browser.
+      </p>
+    </div>
+
+    <h2>1. Data the extension accesses</h2>
+    <p>
+      The extension fetches your pull-request inbox from
+      <code>github.com/pulls/inbox</code> using the github.com session you are already signed in
+      with (your browser cookies). It never sees, asks for, or stores your password, a personal
+      access token, or any other credential.
+    </p>
+
+    <h2>2. Network requests</h2>
+    <p>
+      The only host the extension communicates with is <code>https://github.com</code>, matching
+      its sole host permission. There are no third-party requests of any kind — no analytics
+      services, no crash reporters, no CDNs.
+    </p>
+
+    <h2>3. Data stored locally</h2>
+    <p>All data stays inside Chrome's extension storage on your devices:</p>
+    <ul>
+      <li>
+        <strong>Settings</strong> (enabled sections, tab-group names and colors, filters, refresh
+        interval) in <code>chrome.storage.sync</code>, which Chrome may sync between your own
+        signed-in browsers.
+      </li>
+      <li>
+        <strong>The latest inbox snapshot</strong> (PR titles, repositories, URLs, timestamps) in
+        <code>chrome.storage.local</code>, used to render the popup instantly.
+      </li>
+      <li>
+        <strong>A tab-ownership registry</strong> in <code>chrome.storage.session</code>, which is
+        erased when the browser closes.
+      </li>
+      <li>
+        <strong>A debug dump of raw responses</strong>, only if you explicitly enable debug mode in
+        the settings.
+      </li>
+    </ul>
+    <p>Uninstalling the extension deletes all of this data.</p>
+
+    <h2>4. Permissions and why they are needed</h2>
+    <ul>
+      <li><code>tabs</code>, <code>tabGroups</code> — create and update the synced tab groups.</li>
+      <li><code>alarms</code> — refresh the inbox on a schedule.</li>
+      <li><code>storage</code> — keep the settings and snapshot described above.</li>
+      <li>
+        Host permission for <code>https://github.com/*</code> — fetch your PR inbox with your
+        existing session.
+      </li>
+    </ul>
+
+    <h2>5. Limited Use</h2>
+    <p>
+      The extension's use of data follows the Chrome Web Store User Data Policy, including its
+      Limited Use requirements: data is used only to provide the single user-facing feature
+      described on this site. It is never sold, never transferred to third parties, and never used
+      for advertising, credit assessment, or any other purpose.
+    </p>
+
+    <h2>6. This website</h2>
+    <p>
+      This site is a static page hosted on GitHub Pages. It sets no cookies and runs no analytics.
+      GitHub Pages may log requests (such as IP addresses) as part of normal hosting; see
+      <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+        rel="noopener">GitHub's privacy statement</a
+      >.
+    </p>
+
+    <h2>7. Changes & contact</h2>
+    <p>
+      Changes to this policy are published on this page with an updated date. Questions and
+      concerns are welcome on the
+      <a href={`${REPO_URL}/issues`} rel="noopener">GitHub issue tracker</a>.
+    </p>
+  </article>
+</Base>

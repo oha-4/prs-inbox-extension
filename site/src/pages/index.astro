@@ -1,0 +1,119 @@
+---
+import FeatureCard from '../components/FeatureCard.astro';
+import PopupMock from '../components/PopupMock.astro';
+import { REPO_URL, STORE_URL, ui } from '../i18n/ui';
+import Base from '../layouts/Base.astro';
+
+const t = ui.en;
+
+const features = [
+  {
+    tag: 'Inbox',
+    title: 'Your whole inbox at a glance',
+    body: 'Every section of github.com/pulls/inbox in one compact popup. Unread PRs are bold; one click opens the PR.',
+  },
+  {
+    tag: 'Sync',
+    title: 'Live tab groups',
+    body: 'Enabled sections become Chrome tab groups, kept in sync on a schedule. Merged or closed PRs leave on their own.',
+  },
+  {
+    tag: 'Filters',
+    title: 'Owner & repo filters',
+    body: 'Allow or block by owner or owner/repo. One list, applied to the popup and tab sync alike.',
+  },
+  {
+    tag: 'Badge',
+    title: 'Review count on the icon',
+    body: 'The "Needs your review" count sits on the toolbar badge, so you know before you click.',
+  },
+  {
+    tag: 'Respect',
+    title: 'Your tabs stay yours',
+    body: 'Navigate a synced tab elsewhere or drag it out of its group, and the extension lets go — it never closes a tab it no longer owns.',
+  },
+  {
+    tag: 'Private',
+    title: 'No token, no servers',
+    body: 'Uses your existing github.com session. Talks only to github.com; settings and cache never leave your browser.',
+  },
+];
+
+const steps = [
+  { n: '01', text: 'Sign in to github.com as usual — no token or OAuth setup.' },
+  { n: '02', text: 'Pick the inbox sections to sync and give each a tab-group name and color.' },
+  { n: '03', text: 'Your PR tabs stay in step with your inbox. Review, merge, gone.' },
+];
+---
+
+<Base title={t.siteName} description={t.description} lang="en">
+  <section class="grid items-center gap-10 py-10 sm:py-16 lg:grid-cols-[1.1fr_1fr]">
+    <div>
+      <p class="rise rise-1 text-signal font-mono text-xs font-medium tracking-[0.18em] uppercase">
+        ● Live folder for pull requests
+      </p>
+      <h1
+        class="rise rise-2 font-display mt-4 text-4xl leading-[1.05] font-bold tracking-tight sm:text-5xl"
+      >
+        Your PR inbox,<br />alive in your tabs.
+      </h1>
+      <p class="rise rise-3 text-muted-foreground mt-5 max-w-md text-base leading-relaxed">
+        Mirrors GitHub's PR inbox into a popup and syncs each section into Chrome tab groups —
+        Zen Browser "Live Folder" style, for Chrome.
+      </p>
+      <div class="rise rise-4 mt-7 flex flex-wrap items-center gap-3">
+        {
+          STORE_URL ? (
+            <a
+              href={STORE_URL}
+              rel="noopener"
+              class="bg-signal rounded-lg px-5 py-2.5 text-sm font-semibold text-[#062b1c] shadow-[0_2px_8px_oklch(0.74_0.13_162/35%)] hover:opacity-90"
+            >
+              Add to Chrome
+            </a>
+          ) : (
+            <span class="bg-muted text-muted-foreground rounded-lg border px-5 py-2.5 font-mono text-xs tracking-wide">
+              Chrome Web Store — coming soon
+            </span>
+          )
+        }
+        <a
+          href={REPO_URL}
+          rel="noopener"
+          class="hover:bg-accent rounded-lg border px-5 py-2.5 text-sm font-medium"
+        >
+          View on GitHub
+        </a>
+      </div>
+    </div>
+    <div class="rise rise-3 px-2 sm:px-0">
+      <PopupMock />
+    </div>
+  </section>
+
+  <section class="py-10">
+    <h2 class="sr-only">Features</h2>
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((f) => <FeatureCard tag={f.tag} title={f.title} body={f.body} />)}
+    </ul>
+  </section>
+
+  <section class="py-10">
+    <h2 class="font-display text-2xl font-semibold tracking-tight">How it works</h2>
+    <ol class="mt-6 grid gap-6 sm:grid-cols-3">
+      {
+        steps.map((s) => (
+          <li class="border-t pt-4">
+            <span class="text-signal font-mono text-xs font-medium">{s.n}</span>
+            <p class="text-muted-foreground mt-2 text-sm leading-relaxed">{s.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="text-muted-foreground/80 mt-8 max-w-2xl text-xs leading-relaxed">
+      Heads up: the extension reads the same private endpoint GitHub's own PR dashboard uses. It
+      is not a public API and may break without notice — when it does, the popup keeps the last
+      snapshot and shows an error banner.
+    </p>
+  </section>
+</Base>

@@ -1,0 +1,16 @@
+---
+interface Props {
+  tag: string;
+  title: string;
+  body: string;
+}
+const { tag, title, body } = Astro.props;
+---
+
+<li class="bg-card rounded-lg border p-5 shadow-[0_1px_2px_oklch(0_0_0/4%)]">
+  <p class="text-signal font-mono text-[0.65rem] font-medium tracking-[0.14em] uppercase">
+    {tag}
+  </p>
+  <h3 class="font-display mt-2 text-base font-semibold tracking-tight">{title}</h3>
+  <p class="text-muted-foreground mt-1.5 text-sm leading-relaxed">{body}</p>
+</li>

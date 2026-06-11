@@ -1,0 +1,69 @@
+---
+// 拡張ポップアップ＋タブグループの CSS モック（スクリーンショット代わり）。
+// セクション名は拡張UIでも翻訳されないデータなので英語のまま。
+const rows = [
+  { repo: 'acme/api', num: 4821, title: 'Fix race in token refresh', time: '12m', unread: true },
+  { repo: 'acme/web', num: 977, title: 'Migrate settings panel to v2', time: '1h', unread: true },
+  { repo: 'oss/cli', num: 312, title: 'Add --json output flag', time: '3h', unread: false },
+];
+---
+
+<div class="relative select-none" aria-hidden="true">
+  <!-- popup window -->
+  <div
+    class="bg-card relative z-10 rounded-xl border shadow-[0_12px_40px_oklch(0_0_0/14%)] sm:-rotate-1"
+  >
+    <div class="flex items-center gap-2 border-b px-4 py-3">
+      <span class="signal-led bg-signal size-2 rounded-full"></span>
+      <span class="font-display text-sm font-semibold tracking-tight">PRs Inbox</span>
+      <span
+        class="bg-muted text-muted-foreground ml-auto rounded-full px-2 py-0.5 font-mono text-[0.65rem]"
+        >synced · 12s</span
+      >
+    </div>
+    <div class="px-4 py-3">
+      <p class="text-muted-foreground font-mono text-[0.65rem] tracking-[0.14em] uppercase">
+        Needs your review · {rows.length}
+      </p>
+      <ul class="mt-2 space-y-1">
+        {
+          rows.map((r) => (
+            <li class="hover:bg-accent -mx-2 flex items-center gap-2.5 rounded-md px-2 py-1.5">
+              <span
+                class:list={[
+                  'size-1.5 shrink-0 rounded-full',
+                  r.unread ? 'bg-unread' : 'bg-line-strong',
+                ]}
+              />
+              <span class="text-muted-foreground shrink-0 font-mono text-[0.7rem]">
+                {r.repo}#{r.num}
+              </span>
+              <span
+                class:list={[
+                  'truncate text-[0.8rem]',
+                  r.unread ? 'font-semibold' : 'text-muted-foreground',
+                ]}
+              >
+                {r.title}
+              </span>
+              <span class="text-muted-foreground/70 ml-auto shrink-0 font-mono text-[0.65rem]">
+                {r.time}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+
+  <!-- tab group strip -->
+  <div
+    class="bg-card relative z-20 mx-auto -mt-3 flex w-fit max-w-full items-center gap-2 rounded-full border px-3 py-2 shadow-[0_8px_24px_oklch(0_0_0/12%)] sm:absolute sm:-right-4 sm:-bottom-6 sm:mx-0 sm:mt-0 sm:rotate-1"
+  >
+    <span class="bg-signal size-2 rounded-full"></span>
+    <span class="font-mono text-[0.7rem] font-medium">Reviews</span>
+    <span class="flex items-center gap-1">
+      {[0, 1, 2].map(() => <span class="bg-muted h-4 w-7 rounded-sm border" />)}
+    </span>
+  </div>
+</div>

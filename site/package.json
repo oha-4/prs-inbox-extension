@@ -1,0 +1,28 @@
+{
+  "name": "prs-inbox-site",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=11.10.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.2.10",
+    "@fontsource-variable/geist": "^5.2.9",
+    "@fontsource-variable/geist-mono": "^5.2.8",
+    "@tailwindcss/vite": "^4.3.0",
+    "astro": "^6.0.0",
+    "tailwindcss": "^4.3.0"
+  },
+  "devDependencies": {
+    "vite": "^7.3.5"
+  }
+}

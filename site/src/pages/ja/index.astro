@@ -1,0 +1,118 @@
+---
+import FeatureCard from '../../components/FeatureCard.astro';
+import PopupMock from '../../components/PopupMock.astro';
+import { REPO_URL, STORE_URL, ui } from '../../i18n/ui';
+import Base from '../../layouts/Base.astro';
+
+const t = ui.ja;
+
+const features = [
+  {
+    tag: 'Inbox',
+    title: 'Inbox全体をひと目で',
+    body: 'github.com/pulls/inbox の全セクションをコンパクトなポップアップに一覧表示。未読は太字、クリックでPRを開く。',
+  },
+  {
+    tag: 'Sync',
+    title: 'ライブなタブグループ',
+    body: '有効化したセクションがChromeのタブグループになり、定期的に同期。マージ済みPRのタブは自動で消える。',
+  },
+  {
+    tag: 'Filters',
+    title: 'owner / repo フィルタ',
+    body: 'owner または owner/repo 単位の包含・除外リスト。ポップアップとタブ同期の両方に同じく適用。',
+  },
+  {
+    tag: 'Badge',
+    title: 'アイコンにレビュー件数',
+    body: '「Needs your review」の件数をツールバーのバッジに表示。開く前に状況がわかる。',
+  },
+  {
+    tag: 'Respect',
+    title: 'あなたのタブはあなたのもの',
+    body: '別ページへ移動したタブやグループ外へ出したタブには手を出さない。勝手に閉じることはない。',
+  },
+  {
+    tag: 'Private',
+    title: 'トークン不要・サーバーなし',
+    body: '既存の github.com ログインセッションをそのまま利用。通信先は github.com のみで、設定とキャッシュはブラウザの外に出ない。',
+  },
+];
+
+const steps = [
+  { n: '01', text: 'いつも通り github.com にログインするだけ。トークンやOAuthの設定は不要。' },
+  { n: '02', text: '同期したいセクションを選び、タブグループの名前と色を決める。' },
+  { n: '03', text: 'PRタブがInboxと同期し続ける。レビューして、マージしたら、消える。' },
+];
+---
+
+<Base title={t.siteName} description={t.description} lang="ja">
+  <section class="grid items-center gap-10 py-10 sm:py-16 lg:grid-cols-[1.1fr_1fr]">
+    <div>
+      <p class="rise rise-1 text-signal font-mono text-xs font-medium tracking-[0.18em] uppercase">
+        ● Live folder for pull requests
+      </p>
+      <h1
+        class="rise rise-2 font-display mt-4 text-4xl leading-[1.15] font-bold tracking-tight sm:text-5xl"
+      >
+        PR Inboxが、<br />タブの中で生きている。
+      </h1>
+      <p class="rise rise-3 text-muted-foreground mt-5 max-w-md text-base leading-relaxed">
+        GitHubのPR Inboxをポップアップに映し、各セクションをChromeのタブグループへ自動同期。
+        Zen Browserの「Live Folder」を、Chromeで。
+      </p>
+      <div class="rise rise-4 mt-7 flex flex-wrap items-center gap-3">
+        {
+          STORE_URL ? (
+            <a
+              href={STORE_URL}
+              rel="noopener"
+              class="bg-signal rounded-lg px-5 py-2.5 text-sm font-semibold text-[#062b1c] shadow-[0_2px_8px_oklch(0.74_0.13_162/35%)] hover:opacity-90"
+            >
+              Chromeに追加
+            </a>
+          ) : (
+            <span class="bg-muted text-muted-foreground rounded-lg border px-5 py-2.5 font-mono text-xs tracking-wide">
+              Chrome Web Store — 準備中
+            </span>
+          )
+        }
+        <a
+          href={REPO_URL}
+          rel="noopener"
+          class="hover:bg-accent rounded-lg border px-5 py-2.5 text-sm font-medium"
+        >
+          GitHubで見る
+        </a>
+      </div>
+    </div>
+    <div class="rise rise-3 px-2 sm:px-0">
+      <PopupMock />
+    </div>
+  </section>
+
+  <section class="py-10">
+    <h2 class="sr-only">機能</h2>
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((f) => <FeatureCard tag={f.tag} title={f.title} body={f.body} />)}
+    </ul>
+  </section>
+
+  <section class="py-10">
+    <h2 class="font-display text-2xl font-semibold tracking-tight">使い方</h2>
+    <ol class="mt-6 grid gap-6 sm:grid-cols-3">
+      {
+        steps.map((s) => (
+          <li class="border-t pt-4">
+            <span class="text-signal font-mono text-xs font-medium">{s.n}</span>
+            <p class="text-muted-foreground mt-2 text-sm leading-relaxed">{s.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="text-muted-foreground/80 mt-8 max-w-2xl text-xs leading-relaxed">
+      注意:
+      この拡張はGitHubのPRダッシュボードが内部的に使う非公開エンドポイントを読んでいます。公開APIではないため予告なく動かなくなる可能性があります。その場合もポップアップは直前のスナップショットを保持し、エラーバナーを表示します。
+    </p>
+  </section>
+</Base>
