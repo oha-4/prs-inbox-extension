@@ -42,6 +42,17 @@ jobs:
           use_oidc: true
           fail_ci_if_error: true
 
+  actionlint:
+    name: Actionlint (workflow lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      # .tool-versions の actionlint をインストール（このジョブに必要なのは actionlint だけ）
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          install_args: actionlint
+      - run: actionlint -color
+
   pinact:
     name: Pinact (verify pinned actions)
     runs-on: ubuntu-latest
