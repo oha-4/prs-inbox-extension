@@ -4,6 +4,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # .npmrc の min-release-age=7 と揃える
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: github-actions
     directory: /
