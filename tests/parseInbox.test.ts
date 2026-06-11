@@ -29,8 +29,7 @@ describe('parseInboxResponse', () => {
   it('falls back to scanning payload when the route key is renamed', () => {
     const renamed = {
       payload: {
-        someFutureRouteName: (fixture as Record<string, any>).payload
-          .pullsInboxSurfaceContentRoute,
+        someFutureRouteName: (fixture as Record<string, any>).payload.pullsInboxSurfaceContentRoute,
       },
     };
     const page = parseInboxResponse(renamed);

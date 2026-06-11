@@ -3,7 +3,11 @@ import type { InboxSnapshot } from '../../types';
 import { loadSnapshot, STORAGE_KEYS } from '../../storage';
 import { sendMessage } from '../../messages';
 
-export function useSnapshot(): { snapshot: InboxSnapshot | null; refreshing: boolean; refresh: () => void } {
+export function useSnapshot(): {
+  snapshot: InboxSnapshot | null;
+  refreshing: boolean;
+  refresh: () => void;
+} {
   const [snapshot, setSnapshot] = useState<InboxSnapshot | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 

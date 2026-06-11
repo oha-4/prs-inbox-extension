@@ -37,7 +37,7 @@ export async function syncTabs(force = false): Promise<void> {
 async function syncTabsLocked(force: boolean): Promise<void> {
   const settings = await loadSettings();
   const snapshot = await loadSnapshot();
-  if (!snapshot || snapshot.authState !== 'ok') return;
+  if (snapshot?.authState !== 'ok') return;
 
   const state = await loadSyncState();
   const { desired, orderByGroup } = buildDesired(snapshot.sections, settings);

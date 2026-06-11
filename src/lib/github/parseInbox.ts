@@ -25,7 +25,7 @@ export function parseInboxResponse(body: unknown): ParsedInboxPage {
   const payload = body.payload;
 
   let route: Record<string, unknown> | null = null;
-  const direct = payload['pullsInboxSurfaceContentRoute'];
+  const direct = payload.pullsInboxSurfaceContentRoute;
   if (isRecord(direct) && Array.isArray(direct.results)) {
     route = direct;
   } else {

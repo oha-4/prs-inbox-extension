@@ -11,9 +11,7 @@ export async function updateBadge(
     const sections = filterSections(snapshot.sections, settings.allowlist, settings.blocklist);
     const ids = new Set<string>(['review-requested']);
     if (settings.badgeIncludeTeamReview) ids.add('team-review-requested');
-    const count = sections
-      .filter((s) => ids.has(s.id))
-      .reduce((sum, s) => sum + s.prs.length, 0);
+    const count = sections.filter((s) => ids.has(s.id)).reduce((sum, s) => sum + s.prs.length, 0);
     text = count > 0 ? String(count) : '';
   }
   await chrome.action.setBadgeText({ text });

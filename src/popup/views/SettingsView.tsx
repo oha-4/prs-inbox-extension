@@ -275,6 +275,7 @@ function SortEditor({ settings, update }: Props): React.JSX.Element {
         const usedByOthers = new Set(criteria.filter((_, i) => i !== idx).map((x) => x.key));
         const options = SORT_KEYS.filter((k) => k === c.key || !usedByOthers.has(k));
         return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional sort slots
           <div key={idx} className="flex items-center gap-1.5">
             <span className="text-muted-foreground font-mono text-[10px]">{idx + 1}</span>
             <Select

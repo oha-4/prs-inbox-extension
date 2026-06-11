@@ -49,6 +49,7 @@ function LoadingSkeleton(): React.JSX.Element {
   return (
     <div className="animate-in fade-in duration-200">
       {Array.from({ length: 6 }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton rows
         <div key={i} className="flex items-center gap-2.5 border-b px-3 py-2">
           <Skeleton className="size-4 rounded-full" />
           <div className="flex-1 space-y-1.5">
@@ -71,9 +72,7 @@ export function App(): React.JSX.Element {
   const sections = useMemo(() => {
     if (!snapshot || !settings) return [];
     const filtered = filterSections(snapshot.sections, settings.allowlist, settings.blocklist);
-    return [...filtered].sort(
-      (a, b) => SECTION_ORDER.indexOf(a.id) - SECTION_ORDER.indexOf(b.id),
-    );
+    return [...filtered].sort((a, b) => SECTION_ORDER.indexOf(a.id) - SECTION_ORDER.indexOf(b.id));
   }, [snapshot, settings]);
 
   return (

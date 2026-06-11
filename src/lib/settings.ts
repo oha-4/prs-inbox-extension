@@ -67,9 +67,7 @@ export function mergeSettings(stored: unknown): Settings {
     ...(typeof s.forceAlignOnRefresh === 'boolean'
       ? { forceAlignOnRefresh: s.forceAlignOnRefresh }
       : {}),
-    ...(Array.isArray(s.sortCriteria)
-      ? { sortCriteria: sanitizeSort(s.sortCriteria) }
-      : {}),
+    ...(Array.isArray(s.sortCriteria) ? { sortCriteria: sanitizeSort(s.sortCriteria) } : {}),
     ...(Array.isArray(s.allowlist) ? { allowlist: s.allowlist.filter(isNonEmptyString) } : {}),
     ...(Array.isArray(s.blocklist) ? { blocklist: s.blocklist.filter(isNonEmptyString) } : {}),
     ...(typeof s.debugMode === 'boolean' ? { debugMode: s.debugMode } : {}),

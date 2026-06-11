@@ -21,7 +21,13 @@ export interface TabSyncPlan {
   /** ターゲットグループ内に既にある未所有タブを所有化する */
   toAdopt: OwnedTab[];
   /** 所有タブを別グループへ移動（セクションのグループ設定変更時） */
-  toMove: { tabId: number; prId: string; prUrl: string; groupName: string; groupColor: TabGroupColor }[];
+  toMove: {
+    tabId: number;
+    prId: string;
+    prUrl: string;
+    groupName: string;
+    groupColor: TabGroupColor;
+  }[];
   /** inboxから消えたPRの所有タブを閉じる（autoClose時） */
   toClose: number[];
   /** inboxから消えたが閉じない（autoCloseオフ）→ 所有権だけ手放すprId */
@@ -140,7 +146,7 @@ export function forceExtraCloses(
   for (const t of managedTabs) {
     const key = prUrlKey(t.url);
     const set = desiredKeysByGroup.get(t.groupName);
-    if (!key || !set || !set.has(key)) close.push(t.tabId);
+    if (!key || !set?.has(key)) close.push(t.tabId);
   }
   return close;
 }

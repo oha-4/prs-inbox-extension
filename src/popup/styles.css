@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 /* ── "Signal" — terminal-style live monitor ───────────────────────────────
    A control panel for a Live Folder of PRs. One green accent used like a
@@ -33,9 +33,9 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', monospace;
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", monospace;
 }
 
 :root {
@@ -122,7 +122,7 @@
 
   /* subtle film grain overlay */
   body::before {
-    content: '';
+    content: "";
     position: fixed;
     inset: 0;
     z-index: 9999;

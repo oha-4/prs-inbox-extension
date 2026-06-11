@@ -45,9 +45,7 @@ describe('computeTabSyncPlan', () => {
     const plan = computeTabSyncPlan({
       desired: [desired('1')],
       ownedTabs: [owned('1', 10)],
-      existingTabs: [
-        { tabId: 10, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 },
-      ],
+      existingTabs: [{ tabId: 10, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 }],
       groupIdByName: { 'Needs review': 5 },
       autoClose: true,
     });
@@ -99,9 +97,7 @@ describe('computeTabSyncPlan', () => {
     const plan = computeTabSyncPlan({
       desired: [desired('1')],
       ownedTabs: [],
-      existingTabs: [
-        { tabId: 20, url: 'https://github.com/acme/widgets/pull/1', groupId: -1 },
-      ],
+      existingTabs: [{ tabId: 20, url: 'https://github.com/acme/widgets/pull/1', groupId: -1 }],
       groupIdByName: { 'Needs review': 5 },
       autoClose: true,
     });
@@ -114,9 +110,7 @@ describe('computeTabSyncPlan', () => {
     const plan = computeTabSyncPlan({
       desired: [desired('1')],
       ownedTabs: [],
-      existingTabs: [
-        { tabId: 20, url: 'https://github.com/acme/widgets/pull/1', groupId: 99 },
-      ],
+      existingTabs: [{ tabId: 20, url: 'https://github.com/acme/widgets/pull/1', groupId: 99 }],
       groupIdByName: {},
       autoClose: true,
     });
@@ -126,10 +120,7 @@ describe('computeTabSyncPlan', () => {
 
   it('dedupes a PR appearing in two sections mapped to the same plan (first wins)', () => {
     const plan = computeTabSyncPlan({
-      desired: [
-        desired('1', { groupName: 'Group A' }),
-        desired('1', { groupName: 'Group B' }),
-      ],
+      desired: [desired('1', { groupName: 'Group A' }), desired('1', { groupName: 'Group B' })],
       ownedTabs: [],
       existingTabs: NO_TABS,
       groupIdByName: {},
@@ -157,9 +148,7 @@ describe('computeTabSyncPlan', () => {
     const plan = computeTabSyncPlan({
       desired: [],
       ownedTabs: [],
-      existingTabs: [
-        { tabId: 30, url: 'https://github.com/acme/widgets/pull/7', groupId: 5 },
-      ],
+      existingTabs: [{ tabId: 30, url: 'https://github.com/acme/widgets/pull/7', groupId: 5 }],
       groupIdByName: { 'Needs review': 5 },
       autoClose: true,
     });
