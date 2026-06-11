@@ -1,7 +1,7 @@
 {
   "name": "prs-inbox-extension",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "license": "MIT",
   "author": "Yoshito Ohata",
   "type": "module",
