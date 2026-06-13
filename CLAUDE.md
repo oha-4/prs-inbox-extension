@@ -87,7 +87,10 @@ Accept: application/json        (cookie auth, credentials: 'include')
   priority, then sorted), validates group ids and owned tabs, applies the diff,
   and reorders tabs within each group.
 - **Normal** mode respects the user: never closes a tab it doesn't own; releases
-  ownership when the user navigates a tab away or moves it out of the group.
+  ownership when the user navigates a tab away or moves it out of the group
+  (renaming a managed group also releases it — by design). New groups are
+  created in the window of an existing managed group when there is one
+  (last-focused window otherwise).
 - **Force-align** (button / `forceAlignOnRefresh`) reconciles managed groups to
   exactly the desired set, ignoring user-added/removed tabs.
 - Synced tabs are created `active:false` and **left to load** (no `discard`) so

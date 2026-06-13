@@ -127,17 +127,17 @@ async function executeNormal(
   for (const ot of state.ownedTabs) {
     const tab = await chrome.tabs.get(ot.tabId).catch(() => null);
     if (!tab || tab.id === undefined) continue;
-    const url = tab.url ?? tab.pendingUrl ?? '';
-    if (!isSamePr(url, ot.prUrl)) continue;
+    if (!isSamePr(tabUrl(tab), ot.prUrl)) continue;
     const expectedGroupId = groupIds[ot.groupName];
     if (expectedGroupId === undefined || tab.groupId !== expectedGroupId) continue;
     validOwned.push(ot);
   }
 
-  const allTabs = await chrome.tabs.query({ url: 'https://github.com/*' });
+  // url フィルタ付き query は読み込み中（未コミット）のタブを取りこぼすため全件から絞る
+  const allTabs = await chrome.tabs.query({});
   const existingTabs: ExistingTabInfo[] = allTabs
-    .filter((t) => t.id !== undefined && t.url && prUrlKey(t.url) !== null)
-    .map((t) => ({ tabId: t.id!, url: t.url!, groupId: t.groupId ?? TAB_GROUP_ID_NONE }));
+    .filter((t) => t.id !== undefined && prUrlKey(tabUrl(t)) !== null)
+    .map((t) => ({ tabId: t.id!, url: tabUrl(t), groupId: t.groupId ?? TAB_GROUP_ID_NONE }));
 
   const plan = computeTabSyncPlan({
     desired,
@@ -178,7 +178,7 @@ async function executeForce(
     .filter((t) => t.id !== undefined && t.groupId !== undefined && managedIds.has(t.groupId))
     .map((t) => ({
       tabId: t.id!,
-      url: t.url ?? t.pendingUrl ?? '',
+      url: tabUrl(t),
       groupName: nameByGroupId.get(t.groupId!)!,
     }));
 
@@ -242,6 +242,16 @@ function orderIndex(id: string): number {
   return i === -1 ? SECTION_ORDER.length : i;
 }
 
+/** 読み込み中のタブは url が空文字（undefined ではない）のため pendingUrl まで見る */
+function tabUrl(tab: chrome.tabs.Tab): string {
+  return tab.url || tab.pendingUrl || '';
+}
+
+/**
+ * タブ/グループを置くべきウィンドウ。自グループ → 他の管理グループ →
+ * 最後にフォーカスされた通常ウィンドウ、の順。新規グループが既存の管理
+ * グループと別ウィンドウへ散らばるのを防ぐ。
+ */
 async function targetWindowId(
   groupName: string,
   groupIds: Record<string, number>,
@@ -249,6 +259,11 @@ async function targetWindowId(
   const gid = groupIds[groupName];
   if (gid !== undefined) {
     const g = await chrome.tabGroups.get(gid).catch(() => null);
+    if (g) return g.windowId;
+  }
+  for (const [name, id] of Object.entries(groupIds)) {
+    if (name === groupName) continue;
+    const g = await chrome.tabGroups.get(id).catch(() => null);
     if (g) return g.windowId;
   }
   const w = await chrome.windows.getLastFocused({ windowTypes: ['normal'] }).catch(() => null);
