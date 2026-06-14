@@ -25,15 +25,16 @@ export function useSnapshot(): {
     return () => chrome.storage.onChanged.removeListener(onChanged);
   }, []);
 
-  // popupを開いたら裏で最新化
-  useEffect(() => {
-    void sendMessage({ type: 'REFRESH' });
-  }, []);
-
   const refresh = (): void => {
     setRefreshing(true);
     void sendMessage({ type: 'REFRESH' }).finally(() => setRefreshing(false));
   };
+
+  // popupを開いたら裏で最新化（アイコンも回す）
+  useEffect(() => {
+    setRefreshing(true);
+    void sendMessage({ type: 'REFRESH' }).finally(() => setRefreshing(false));
+  }, []);
 
   return { snapshot, refreshing, refresh };
 }
