@@ -565,16 +565,20 @@ function SortableInboxRow({
       <span className={cn('flex-1 truncate', hidden && 'text-muted-foreground line-through')}>
         {label}
       </span>
-      {hidden ? (
-        <EyeOff className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
-      ) : (
-        <Eye className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
-      )}
-      <Switch
-        checked={!hidden}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7 shrink-0"
         aria-label={t('toggleSectionVisibility', label)}
-        onCheckedChange={(checked) => onToggle(checked)}
-      />
+        aria-pressed={!hidden}
+        onClick={() => onToggle(hidden)}
+      >
+        {hidden ? (
+          <EyeOff className="text-muted-foreground size-3.5" />
+        ) : (
+          <Eye className="size-3.5" />
+        )}
+      </Button>
     </div>
   );
 }
