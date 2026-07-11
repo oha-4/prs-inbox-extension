@@ -39,6 +39,12 @@ export interface InboxSnapshot {
   sections: InboxSection[];
   authState: AuthState;
   errorDetail?: string;
+  /**
+   * セクション単位で取得に失敗したものの一覧（HTTP/parse失敗）。
+   * 成功セクションは新データ、失敗セクションは前回データで補完されるため
+   * authState は 'ok' のままでもここに残る（popup でバナー表示に使う）。
+   */
+  sectionErrors?: { id: string; detail: string }[];
 }
 
 /**
@@ -119,7 +125,6 @@ export interface SyncState {
    * 「ユーザーの chrome 側リネーム」（不一致 → 所有権解放）を区別できる。
    */
   groups: Record<string, { chromeGroupId: number; title: string }>;
-  backoffUntil?: number;
 }
 
 export interface DebugDump {

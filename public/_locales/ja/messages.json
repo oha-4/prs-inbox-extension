@@ -24,6 +24,9 @@
   "logIn": { "message": "ログインする" },
   "rateLimited": { "message": "レート制限中です。しばらく待つと自動で再開します。" },
   "fetchFailed": { "message": "取得に失敗しました" },
+  "sectionsFetchFailed": {
+    "message": "一部のセクションの取得に失敗しました。該当セクションは前回のデータを表示しています。"
+  },
   "tabGroupSyncHeader": { "message": "タブグループ同期" },
   "tabGroupSyncHint": {
     "message": "タブグループを作成し、各グループにセクションを追加します。ソート未指定のときはセクションの並び順でタブが並びます。複数グループに追加されたPRはグループごとに1タブ開かれます。"

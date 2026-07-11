@@ -56,7 +56,12 @@ chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
       return false;
     }
     lastPollStartedAt = Date.now();
-    respondWith(runPoll(), sendResponse);
+    // 実行中の poll があれば runPoll は false を返す（skipped 応答形式に揃える）。
+    // reject 時も respondWith が { ok: false } で必ず応答チャネルを締める。
+    respondWith(
+      runPoll().then((ran) => ({ ok: true, skipped: !ran })),
+      sendResponse,
+    );
     return true;
   }
   if (msg.type === 'SYNC_TABS_NOW') {

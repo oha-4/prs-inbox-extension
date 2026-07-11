@@ -4,6 +4,15 @@ export type FetchOutcome =
   | { kind: 'rate_limited'; retryAfterSeconds: number }
   | { kind: 'http_error'; status: number; detail: string };
 
+/** 1リクエストのハングでpollのセクションループが停止しないよう全fetchに課すタイムアウト。 */
+const FETCH_TIMEOUT_MS = 20_000;
+
+/** Retry-Afterの上限クランプ（秒）。異常に長い待機で更新が事実上止まるのを防ぐ。 */
+const RETRY_AFTER_MAX_SECONDS = 3600;
+
+/** Retry-After解析不能時のフォールバック（秒）。 */
+const RETRY_AFTER_FALLBACK_SECONDS = 300;
+
 export function buildInboxQueriesUrl(filter: string, maxPrAge: string, page?: number): string {
   const params = new URLSearchParams({ filter, max_pr_age: maxPrAge });
   if (page !== undefined && page > 1) params.set('page', String(page));
@@ -27,18 +36,38 @@ export async function fetchInboxQueries(
       credentials: 'include',
       cache: 'no-store',
       headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
   } catch (e) {
+    // AbortSignal.timeout()はTimeoutError（DOMException）でrejectする。
+    if (e instanceof DOMException && e.name === 'TimeoutError') {
+      return { kind: 'http_error', status: 0, detail: `timeout after ${FETCH_TIMEOUT_MS / 1000}s` };
+    }
     return { kind: 'http_error', status: 0, detail: `network error: ${String(e)}` };
   }
 
   if (res.redirected && res.url.includes('/login')) return { kind: 'logged_out' };
-  if (res.status === 404) return { kind: 'logged_out' };
+  if (res.status === 404) {
+    // private APIパスの消滅による素の404を「ログアウト」と誤判定しない。
+    // 認証エラーはbodyに "Couldn't authenticate you" を含む（' と ’ の両方に耐える）。
+    const text = await res.text().catch(() => '');
+    if (/couldn.t authenticate you/i.test(text)) return { kind: 'logged_out' };
+    return { kind: 'http_error', status: 404, detail: text.slice(0, 200) };
+  }
   if (res.status === 429) {
-    const retryAfter = Number(res.headers.get('retry-after'));
+    const header = res.headers.get('retry-after') ?? '';
+    // delta-seconds（例: "120"）を優先。非数値ならHTTP-date形式を試す。
+    let seconds = Number(header);
+    if (!Number.isFinite(seconds)) {
+      const dateMs = Date.parse(header);
+      if (!Number.isNaN(dateMs)) seconds = Math.ceil((dateMs - Date.now()) / 1000);
+    }
+    const valid = Number.isFinite(seconds) && seconds > 0;
     return {
       kind: 'rate_limited',
-      retryAfterSeconds: Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 300,
+      retryAfterSeconds: valid
+        ? Math.min(seconds, RETRY_AFTER_MAX_SECONDS)
+        : RETRY_AFTER_FALLBACK_SECONDS,
     };
   }
   if (!res.ok) {
