@@ -58,6 +58,15 @@
   "keepEmptyGroupsHint": {
     "message": "When a group runs out of PRs, an Inbox Zero page (on this extension's website) is opened as a placeholder tab so the group keeps its position."
   },
+  "inboxSectionsHeader": { "message": "Inbox sections" },
+  "inboxSectionsHint": {
+    "message": "Choose which sections show in the popup and drag to reorder them. Display only — this doesn't change fetching, the badge count, or tab-group sync."
+  },
+  "dragToReorder": { "message": "Drag to reorder" },
+  "toggleSectionVisibility": {
+    "message": "Show $SECTION$ in the popup",
+    "placeholders": { "section": { "content": "$1" } }
+  },
   "sortHeader": { "message": "Order within groups" },
   "sortHint": { "message": "Sort tabs inside each group (up to 2 levels)." },
   "sortAddLevel": { "message": "Add level" },

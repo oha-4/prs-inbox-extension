@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   activeSyncGroups,
   defaultSettings,
+  inboxOrderIndex,
+  isSectionHidden,
   listSections,
   MAX_CUSTOM_SECTIONS,
   MAX_SYNC_GROUPS,
   mergeSettings,
+  orderedInboxSections,
   pollTargets,
   SECTION_ORDER,
   sectionOrderIndex,
@@ -90,6 +93,20 @@ describe('mergeSettings', () => {
     expect(defaultSettings().keepEmptyGroups).toBe(false);
     expect(mergeSettings({ keepEmptyGroups: true }).keepEmptyGroups).toBe(true);
     expect(mergeSettings({ keepEmptyGroups: 'yes' }).keepEmptyGroups).toBe(false);
+  });
+
+  it('defaults hiddenSections and inboxOrder to empty arrays', () => {
+    expect(defaultSettings().hiddenSections).toEqual([]);
+    expect(defaultSettings().inboxOrder).toEqual([]);
+  });
+
+  it('sanitizes hiddenSections/inboxOrder: drops blanks, dedupes, ignores non-arrays', () => {
+    expect(
+      mergeSettings({ hiddenSections: ['review-requested', '', '  '] }).hiddenSections,
+    ).toEqual(['review-requested']);
+    expect(mergeSettings({ inboxOrder: ['a', 'a', 'b'] }).inboxOrder).toEqual(['a', 'b']);
+    expect(mergeSettings({ hiddenSections: 'x' }).hiddenSections).toEqual([]);
+    expect(mergeSettings({ inboxOrder: 42 }).inboxOrder).toEqual([]);
   });
 
   describe('syncGroups sanitization', () => {
@@ -219,5 +236,50 @@ describe('section helpers', () => {
       ],
     });
     expect(activeSyncGroups(s).map((g) => g.id)).toEqual(['g1']);
+  });
+});
+
+describe('inbox section visibility & order', () => {
+  const withCustom = mergeSettings({
+    customSections: [
+      { id: 'custom:a', name: 'Urgent', query: 'label:urgent' },
+      { id: 'custom:b', name: 'Later', query: 'org:foo' },
+    ],
+  });
+
+  it('inboxOrderIndex honors explicit order, then falls back to canonical order', () => {
+    const s = mergeSettings({
+      ...withCustom,
+      inboxOrder: ['your-drafts', 'review-requested'],
+    });
+    expect(inboxOrderIndex('your-drafts', s)).toBe(0);
+    expect(inboxOrderIndex('review-requested', s)).toBe(1);
+    // 未列挙の既知セクションは明示ブロックの後ろ
+    expect(inboxOrderIndex('needs-action', s)).toBeGreaterThan(1);
+    // 未知スラッグは最大（末尾）
+    expect(inboxOrderIndex('never-heard-of-it', s)).toBeGreaterThan(inboxOrderIndex('custom:b', s));
+  });
+
+  it('isSectionHidden is true only for ids in hiddenSections', () => {
+    const s = mergeSettings({ hiddenSections: ['your-drafts'] });
+    expect(isSectionHidden('your-drafts', s)).toBe(true);
+    expect(isSectionHidden('review-requested', s)).toBe(false);
+  });
+
+  it('orderedInboxSections lists every section, reordered, with hidden flags', () => {
+    const s = mergeSettings({
+      ...withCustom,
+      inboxOrder: ['custom:a', 'review-requested'],
+      hiddenSections: ['review-requested'],
+    });
+    const rows = orderedInboxSections(s);
+    expect(rows.length).toBe(listSections(s).length);
+    // 明示順が先頭
+    expect(rows[0]).toEqual({ id: 'custom:a', label: 'Urgent', hidden: false });
+    expect(rows[1]).toEqual({ id: 'review-requested', label: 'Needs your review', hidden: true });
+    // 両配列に無い custom は可視のまま、明示ブロックの後ろに並ぶ
+    const bIndex = rows.findIndex((r) => r.id === 'custom:b');
+    expect(rows[bIndex]?.hidden).toBe(false);
+    expect(bIndex).toBeGreaterThan(1);
   });
 });

@@ -58,6 +58,15 @@
   "keepEmptyGroupsHint": {
     "message": "グループが空になると、Inbox Zeroページ（この拡張機能のWebサイト）をプレースホルダータブとして開き、グループの位置を保ちます。"
   },
+  "inboxSectionsHeader": { "message": "Inboxのセクション" },
+  "inboxSectionsHint": {
+    "message": "ポップアップに表示するセクションを選び、ドラッグで並べ替えます。表示のみ — 取得・バッジ件数・タブグループ同期には影響しません。"
+  },
+  "dragToReorder": { "message": "ドラッグで並べ替え" },
+  "toggleSectionVisibility": {
+    "message": "$SECTION$ をポップアップに表示",
+    "placeholders": { "section": { "content": "$1" } }
+  },
   "sortHeader": { "message": "グループ内の並び順" },
   "sortHint": { "message": "各グループ内のタブの並び順（最大2段）" },
   "sortAddLevel": { "message": "条件を追加" },
