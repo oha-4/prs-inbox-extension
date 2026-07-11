@@ -114,5 +114,6 @@
   "debugModeLabel": { "message": "Debug mode (save raw responses when parsing fails)" },
   "dumpButton": { "message": "Dump raw responses for all sections" },
   "dumpRunning": { "message": "Fetching…" },
-  "dumpDone": { "message": "Saved (debugDump in storage.local)" }
+  "dumpDone": { "message": "Saved (debugDump in storage.local)" },
+  "cmdSyncNow": { "message": "Sync now" }
 }

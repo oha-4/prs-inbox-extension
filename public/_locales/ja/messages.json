@@ -114,5 +114,6 @@
   "debugModeLabel": { "message": "デバッグモード（パース失敗時に生レスポンスを保存）" },
   "dumpButton": { "message": "全セクションの生レスポンスをダンプ" },
   "dumpRunning": { "message": "取得中…" },
-  "dumpDone": { "message": "保存しました（storage.localのdebugDump）" }
+  "dumpDone": { "message": "保存しました（storage.localのdebugDump）" },
+  "cmdSyncNow": { "message": "今すぐ同期" }
 }
