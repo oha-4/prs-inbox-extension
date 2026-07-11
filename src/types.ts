@@ -86,9 +86,16 @@ export interface Settings {
   forceAlignOnRefresh: boolean;
   /** PRが0件になった有効グループをプレースホルダタブ（Inbox Zeroページ）で維持し、位置を保つか（既定: off） */
   keepEmptyGroups: boolean;
-  /** 同期グループ（popup表示は常に全セクション。同期対象はグループ所属で決まる） */
+  /** 同期グループ（同期対象はグループ所属で決まる。popup表示は下記2フィールドで制御） */
   syncGroups: SyncGroup[];
   customSections: CustomSection[];
+  /**
+   * popup 一覧で非表示にするセクションid（表示のみ。取得・バッジ・タブ同期には影響しない）。
+   * 両配列に無いidは可視扱い（新規カスタム/未知スラッグが勝手に隠れない）。
+   */
+  hiddenSections: string[];
+  /** popup 一覧のセクション表示順（全セクションidの明示順。未列挙は正準順で末尾）。表示のみ */
+  inboxOrder: string[];
   /** 'owner' または 'owner/repo'。空なら全許可 */
   allowlist: string[];
   blocklist: string[];

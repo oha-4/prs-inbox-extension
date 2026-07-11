@@ -7,8 +7,11 @@ import {
   ChevronDown,
   ChevronUp,
   CloudDownload,
+  Eye,
+  EyeOff,
   Filter,
   FolderSync,
+  GripVertical,
   ListFilter,
   Loader2,
   Plus,
@@ -16,6 +19,24 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { Settings as SettingsType, SortKey } from '../../types';
 import { t } from '../../lib/i18n';
 import {
@@ -24,6 +45,7 @@ import {
   MAX_CUSTOM_SECTIONS,
   MAX_SORT_CRITERIA,
   MAX_SYNC_GROUPS,
+  orderedInboxSections,
   SORT_KEYS,
 } from '../../lib/settings';
 import { sendMessage } from '../../messages';
@@ -226,6 +248,8 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
                       ? { ...gr, sectionIds: gr.sectionIds.filter((id) => id !== ci.id) }
                       : gr,
                   ),
+                  hiddenSections: s.hiddenSections.filter((id) => id !== ci.id),
+                  inboxOrder: s.inboxOrder.filter((id) => id !== ci.id),
                 }))
               }
             >
@@ -251,6 +275,12 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
           <Plus className="size-3" />
           {t('addCustomSection')}
         </Button>
+      </section>
+
+      <section className="space-y-2">
+        <SectionHeader icon={Eye}>{t('inboxSectionsHeader')}</SectionHeader>
+        <p className="text-muted-foreground m-0 text-[11px]">{t('inboxSectionsHint')}</p>
+        <InboxSectionList settings={settings} update={update} />
       </section>
 
       <section className="space-y-2">
@@ -433,6 +463,118 @@ function SortEditor({ settings, update }: Props): React.JSX.Element {
           {t('sortAddLevel')}
         </Button>
       )}
+    </div>
+  );
+}
+
+/**
+ * popup 一覧に出すセクションの表示/非表示トグルと並べ替え（ドラッグ&ドロップ）。
+ * 表示のみに影響（取得・バッジ・タブ同期には無関係）。並べ替えは全idを
+ * materialize して inboxOrder に書き込み、順序を固定する。
+ */
+function InboxSectionList({
+  settings,
+  update,
+}: {
+  settings: SettingsType;
+  update: (mutate: (s: SettingsType) => SettingsType) => void;
+}): React.JSX.Element {
+  const rows = orderedInboxSections(settings);
+  const ids = rows.map((r) => r.id);
+  const sensors = useSensors(
+    // distance を付けないと Switch のクリックをドラッグが飲み込む
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const onDragEnd = ({ active, over }: DragEndEvent): void => {
+    if (!over || active.id === over.id) return;
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from === -1 || to === -1) return;
+    const next = arrayMove(ids, from, to);
+    update((s) => ({ ...s, inboxOrder: next }));
+  };
+
+  const toggle = (id: string, visible: boolean): void => {
+    update((s) => ({
+      ...s,
+      hiddenSections: visible
+        ? s.hiddenSections.filter((x) => x !== id)
+        : [...new Set([...s.hiddenSections, id])],
+    }));
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+      onDragEnd={onDragEnd}
+    >
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        <div className="space-y-1">
+          {rows.map((row) => (
+            <SortableInboxRow
+              key={row.id}
+              id={row.id}
+              label={row.label}
+              hidden={row.hidden}
+              onToggle={(visible) => toggle(row.id, visible)}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function SortableInboxRow({
+  id,
+  label,
+  hidden,
+  onToggle,
+}: {
+  id: string;
+  label: string;
+  hidden: boolean;
+  onToggle: (visible: boolean) => void;
+}): React.JSX.Element {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        'bg-background flex items-center gap-1.5 text-[13px]',
+        isDragging && 'relative z-10 opacity-80',
+      )}
+    >
+      <button
+        type="button"
+        // listeners/attributes はハンドルのみ → Switch は独立してクリックできる
+        {...attributes}
+        {...listeners}
+        aria-label={t('dragToReorder')}
+        className="text-muted-foreground hover:text-foreground shrink-0 cursor-grab touch-none active:cursor-grabbing"
+      >
+        <GripVertical className="size-3.5" />
+      </button>
+      <span className={cn('flex-1 truncate', hidden && 'text-muted-foreground line-through')}>
+        {label}
+      </span>
+      {hidden ? (
+        <EyeOff className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
+      ) : (
+        <Eye className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
+      )}
+      <Switch
+        checked={!hidden}
+        aria-label={t('toggleSectionVisibility', label)}
+        onCheckedChange={(checked) => onToggle(checked)}
+      />
     </div>
   );
 }

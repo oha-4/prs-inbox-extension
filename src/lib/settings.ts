@@ -49,6 +49,8 @@ export function defaultSettings(): Settings {
     // 所有権（SyncState.groups のキー）が壊れる。
     syncGroups: [{ id: 'default', name: 'Needs review', sectionIds: ['review-requested'] }],
     customSections: [],
+    hiddenSections: [],
+    inboxOrder: [],
     allowlist: [],
     blocklist: [],
     debugMode: false,
@@ -80,6 +82,33 @@ export function sectionOrderIndex(id: string, settings: Settings): number {
   const custom = settings.customSections.findIndex((ci) => ci.id === id);
   if (custom !== -1) return SECTION_ORDER.length + custom;
   return SECTION_ORDER.length + settings.customSections.length;
+}
+
+/**
+ * popup 一覧の表示順: inboxOrder に明示されていればその順、無ければ正準順
+ * （sectionOrderIndex）で inboxOrder の後ろに並べる。
+ */
+export function inboxOrderIndex(id: string, settings: Settings): number {
+  const i = settings.inboxOrder.indexOf(id);
+  if (i !== -1) return i;
+  return settings.inboxOrder.length + sectionOrderIndex(id, settings);
+}
+
+/** popup で非表示にするセクションか */
+export function isSectionHidden(id: string, settings: Settings): boolean {
+  return settings.hiddenSections.includes(id);
+}
+
+/**
+ * 設定UI用: 既知 + custom の全セクションを popup 実効順で返す（hidden フラグ付き）。
+ * 並べ替え・表示トグルの行リストとして使う。
+ */
+export function orderedInboxSections(
+  settings: Settings,
+): { id: string; label: string; hidden: boolean }[] {
+  return [...listSections(settings)]
+    .sort((a, b) => inboxOrderIndex(a.id, settings) - inboxOrderIndex(b.id, settings))
+    .map((s) => ({ ...s, hidden: isSectionHidden(s.id, settings) }));
 }
 
 /**
@@ -115,6 +144,10 @@ export function mergeSettings(stored: unknown): Settings {
     ...(Array.isArray(s.customSections)
       ? { customSections: sanitizeCustomSections(s.customSections) }
       : {}),
+    ...(Array.isArray(s.hiddenSections)
+      ? { hiddenSections: sanitizeIdList(s.hiddenSections) }
+      : {}),
+    ...(Array.isArray(s.inboxOrder) ? { inboxOrder: sanitizeIdList(s.inboxOrder) } : {}),
     ...(Array.isArray(s.allowlist) ? { allowlist: s.allowlist.filter(isNonEmptyString) } : {}),
     ...(Array.isArray(s.blocklist) ? { blocklist: s.blocklist.filter(isNonEmptyString) } : {}),
     ...(typeof s.debugMode === 'boolean' ? { debugMode: s.debugMode } : {}),
@@ -123,6 +156,18 @@ export function mergeSettings(stored: unknown): Settings {
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === 'string' && v.trim().length > 0;
+}
+
+/** セクションid配列の検証: 非空文字のみ、重複除去（順序は保持） */
+function sanitizeIdList(raw: unknown[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of raw) {
+    if (!isNonEmptyString(v) || seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+  }
+  return out;
 }
 
 /**
