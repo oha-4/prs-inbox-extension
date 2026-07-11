@@ -21,6 +21,10 @@ jobs:
           node-version-file: .tool-versions
           package-manager-cache: false
       - run: npm ci
+      # manifest の version は package.json 由来（manifest.config.ts）。タグと食い違った
+      # zip（例: 中身1.0.0なのに v1.1.0 としてリリース）を作らないよう先に検証する
+      - name: Verify tag matches package.json version
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
       - run: npm run build
       # manifest.json が zip のルートに来るように dist の中身を固める
       - name: Zip dist
