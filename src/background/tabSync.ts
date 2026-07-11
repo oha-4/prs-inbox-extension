@@ -40,9 +40,17 @@ async function syncTabsLocked(force: boolean): Promise<void> {
 
   const groups = await resolveGroups(settings, state, orderByGroup);
 
+  // 逐次保存（チェックポイント）。MV3 の service worker は作成ループの途中でも
+  // kill されうるため、「最後に1回だけ保存」方式だと作成済みタブ/グループが
+  // 未登録のまま残り、次回同期で同一PRの重複タブが生まれうる（issue #23）。
+  // 採用/作成/移動のたびに ownedTabs と（新規作成で変化する）groups を保存する。
+  // ロック内なので自己競合はなく、storage.session は quota/レート制限が実質ない。
+  const persist = (ownedTabs: OwnedTab[]): Promise<void> =>
+    saveSyncState({ ownedTabs, groups, backoffUntil: state.backoffUntil });
+
   const resultOwned = force
-    ? await executeForce(desired, groups)
-    : await executeNormal(desired, groups, state, settings.autoCloseRemoved);
+    ? await executeForce(desired, groups, persist)
+    : await executeNormal(desired, groups, state, settings.autoCloseRemoved, persist);
 
   // ---- 並べ替え: 各グループのタブをソート順に整列 ----
   const keyToTabId = new Map(resultOwned.map((o) => [`${o.groupId} ${o.prId}`, o.tabId]));
@@ -105,6 +113,7 @@ async function executeNormal(
   groups: ResolvedGroups,
   state: SyncState,
   autoClose: boolean,
+  persist: (ownedTabs: OwnedTab[]) => Promise<void>,
 ): Promise<OwnedTab[]> {
   // 所有タブの検証（消滅/PR・プレースホルダ離脱/グループ外移動 → 所有権放棄）
   const validOwned: OwnedTab[] = [];
@@ -134,6 +143,10 @@ async function executeNormal(
   });
 
   const nextOwned: OwnedTab[] = [...plan.keptOwned, ...plan.toAdopt];
+  // 採用（自己修復: 前回同期が途中で落ちて未登録になったタブの回収）は chrome
+  // 操作を伴わない所有権登録。作成/移動ループが途中で kill されても採用結果が
+  // 失われないよう、ループ前にチェックポイントする。
+  if (plan.toAdopt.length > 0) await persist(nextOwned);
 
   // 作成・移動が先、close は最後。close を先にすると最後のタブが閉じた瞬間に
   // グループが消滅し、プレースホルダが末尾の新規グループに入って位置が失われる。
@@ -142,12 +155,14 @@ async function executeNormal(
     const groupId = await addTabToGroup(mv.tabId, mv.groupId, mv.groupTitle, groups);
     if (groupId !== null) {
       nextOwned.push({ tabId: mv.tabId, prId: mv.prId, prUrl: mv.prUrl, groupId: mv.groupId });
+      await persist(nextOwned);
     }
   }
   for (const d of plan.toCreate) {
     const tabId = await createTabInGroup(d, groups);
     if (tabId !== null) {
       nextOwned.push({ tabId, prId: d.prId, prUrl: d.url, groupId: d.groupId });
+      await persist(nextOwned);
     }
   }
   if (plan.toClose.length > 0) await chrome.tabs.remove(plan.toClose).catch(() => {});
@@ -155,7 +170,11 @@ async function executeNormal(
 }
 
 /** 強制整列: 管理グループの中身を desired に一致させる（ユーザー追加/削除を無視） */
-async function executeForce(desired: DesiredTab[], groups: ResolvedGroups): Promise<OwnedTab[]> {
+async function executeForce(
+  desired: DesiredTab[],
+  groups: ResolvedGroups,
+  persist: (ownedTabs: OwnedTab[]) => Promise<void>,
+): Promise<OwnedTab[]> {
   const settingsGroupIdByChromeId = new Map(
     Object.entries(groups).map(([id, g]) => [g.chromeGroupId, id]),
   );
@@ -203,6 +222,7 @@ async function executeForce(desired: DesiredTab[], groups: ResolvedGroups): Prom
       const tabId = await createTabInGroup(d, groups);
       if (tabId !== null) {
         owned.push({ tabId, prId: d.prId, prUrl: d.url, groupId: d.groupId });
+        await persist(owned);
       }
     }
   }
