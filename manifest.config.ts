@@ -16,6 +16,10 @@ export default defineManifest({
     default_popup: 'src/popup/index.html',
     default_title: '__MSG_extName__',
   },
+  options_ui: {
+    page: 'src/options/index.html',
+    open_in_tab: true,
+  },
   background: {
     service_worker: 'src/background/index.ts',
     type: 'module',

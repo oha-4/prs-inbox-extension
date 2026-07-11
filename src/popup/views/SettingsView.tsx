@@ -5,6 +5,7 @@ import {
   Bug,
   Check,
   CloudDownload,
+  ExternalLink,
   Eye,
   EyeOff,
   Filter,
@@ -74,6 +75,8 @@ interface Props {
   settings: SettingsType;
   update: (mutate: (s: SettingsType) => SettingsType) => void;
   saveError?: string | null;
+  /** 渡された場合のみ、設定画面上部に「フルページで開く」リンクを表示する。 */
+  onOpenFullPage?: () => void;
 }
 
 /** 保存失敗 / 上限手前の警告を出す帯。i18n キーを表示する。 */
@@ -137,12 +140,28 @@ function HintPopover({ text }: { text: string }): React.JSX.Element {
   );
 }
 
-export function SettingsView({ settings, update, saveError }: Props): React.JSX.Element {
+export function SettingsView({
+  settings,
+  update,
+  saveError,
+  onOpenFullPage,
+}: Props): React.JSX.Element {
   const sections = listSections(settings);
   const nearQuota = isNearQuota(settings);
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 space-y-4 overflow-y-auto p-3 pb-5 duration-200">
+      {onOpenFullPage && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground h-6 gap-1 px-1.5 text-[11px]"
+          onClick={onOpenFullPage}
+        >
+          <ExternalLink className="size-3" />
+          {t('openFullPage')}
+        </Button>
+      )}
       {saveError && <SaveWarning messageKey={saveError} />}
       {!saveError && nearQuota && <SaveWarning messageKey="saveWarnNearQuota" />}
       <section className="space-y-3">

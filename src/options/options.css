@@ -1,0 +1,6 @@
+/* popup styles pin the body to a fixed popup width; the options page is a full
+   tab, so let it use the available width and fill the viewport height. */
+body {
+  width: auto;
+  min-height: 100vh;
+}
