@@ -69,9 +69,9 @@ export function defaultSettings(): Settings {
     forceAlignOnRefresh: false,
     keepEmptyGroups: false,
     clickBehavior: CLICK_BEHAVIORS[0],
-    // id は固定文字列。ここで randomUUID() を呼ぶと読み込みごとに別IDになり
-    // 所有権（SyncState.groups のキー）が壊れる。
-    syncGroups: [{ id: 'default', name: 'Needs review', sectionIds: ['review-requested'] }],
+    // 初期状態ではタブグループ同期を行わない。ユーザーが明示的にグループを
+    // 作成するまでタブは触らない。
+    syncGroups: [],
     customSections: [],
     hiddenSections: [],
     inboxOrder: [],

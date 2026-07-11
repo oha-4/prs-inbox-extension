@@ -22,11 +22,9 @@ describe('mergeSettings', () => {
     expect(mergeSettings('junk')).toEqual(defaultSettings());
   });
 
-  it('defaults to a single group syncing review-requested', () => {
+  it('defaults to no sync groups (tab group sync is opt-in)', () => {
     const s = defaultSettings();
-    expect(s.syncGroups).toEqual([
-      { id: 'default', name: 'Needs review', sectionIds: ['review-requested'] },
-    ]);
+    expect(s.syncGroups).toEqual([]);
     expect(s.customSections).toEqual([]);
   });
 
