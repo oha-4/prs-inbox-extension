@@ -43,7 +43,8 @@ chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
       return false;
     }
     lastPollStartedAt = Date.now();
-    void runPoll().then(() => sendResponse({ ok: true }));
+    // 実行中の poll があれば runPoll は false を返す（skipped 応答形式に揃える）
+    void runPoll().then((ran) => sendResponse({ ok: true, skipped: !ran }));
     return true;
   }
   if (msg.type === 'SYNC_TABS_NOW') {
