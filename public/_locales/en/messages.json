@@ -60,6 +60,10 @@
   "keepEmptyGroupsHint": {
     "message": "When a group runs out of PRs, an Inbox Zero page (on this extension's website) is opened as a placeholder tab so the group keeps its position."
   },
+  "clickBehaviorLabel": { "message": "PR row click" },
+  "clickBehavior_newTab": { "message": "Open in new tab" },
+  "clickBehavior_reuseSynced": { "message": "Focus synced tab if open" },
+  "clickBehavior_background": { "message": "Open in background" },
   "showHint": { "message": "About this setting" },
   "inboxHeader": { "message": "Popup inbox" },
   "inboxSectionsHeader": { "message": "Sections" },

@@ -41,6 +41,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { Settings as SettingsType, SortKey } from '../../types';
 import { t } from '../../lib/i18n';
 import {
+  CLICK_BEHAVIORS,
   CUSTOM_SECTION_PREFIX,
   listSections,
   MAX_CUSTOM_SECTIONS,
@@ -294,6 +295,26 @@ export function SettingsView({ settings, update, saveError }: Props): React.JSX.
             </label>
             <HintPopover text={t('keepEmptyGroupsHint')} />
           </div>
+          <label className="flex items-center justify-between gap-2 text-[13px]">
+            {t('clickBehaviorLabel')}
+            <Select
+              value={settings.clickBehavior}
+              onValueChange={(v) =>
+                update((s) => ({ ...s, clickBehavior: v as SettingsType['clickBehavior'] }))
+              }
+            >
+              <SelectTrigger size="sm" className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CLICK_BEHAVIORS.map((v) => (
+                  <SelectItem key={v} value={v}>
+                    {t(`clickBehavior_${v}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
         </div>
         <ForceAlignButton />
       </section>

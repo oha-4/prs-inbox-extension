@@ -113,7 +113,11 @@ export function App(): React.JSX.Element {
       ) : (
         <>
           {snapshot && <ErrorBanner snapshot={snapshot} />}
-          {snapshot === null ? <LoadingSkeleton /> : <SectionList sections={sections} />}
+          {snapshot === null ? (
+            <LoadingSkeleton />
+          ) : (
+            <SectionList sections={sections} clickBehavior={settings?.clickBehavior ?? 'newTab'} />
+          )}
         </>
       )}
     </div>

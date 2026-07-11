@@ -129,6 +129,7 @@ describe('settingsChangeTargets', () => {
       'maxPrAge',
       'hiddenSections',
       'inboxOrder',
+      'clickBehavior',
       'debugMode',
     ]);
     // 各キーを「確実に差分が出る」別値へ差し替えて判定する。
@@ -141,6 +142,7 @@ describe('settingsChangeTargets', () => {
       sortCriteria: [{ key: 'created', dir: 'desc' }],
       forceAlignOnRefresh: true,
       keepEmptyGroups: true,
+      clickBehavior: 'reuseSynced',
       syncGroups: [{ id: 'zzz', name: 'Z', sectionIds: ['needs-action'] }],
       customSections: [{ id: 'custom:zzz', name: 'Z', query: 'is:open' }],
       hiddenSections: ['needs-action'],

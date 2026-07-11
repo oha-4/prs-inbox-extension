@@ -1,4 +1,5 @@
 import type {
+  ClickBehavior,
   CustomSection,
   SectionId,
   Settings,
@@ -24,6 +25,13 @@ export const MAX_POLL_INTERVAL = 120;
  */
 export const MAX_PR_AGE_VALUES = ['1m', '1y'] as const;
 export type MaxPrAge = (typeof MAX_PR_AGE_VALUES)[number];
+
+/**
+ * PR 行クリックの挙動として許可する値（許可リストで縛る）。
+ * UI（SettingsView の選択肢）と mergeSettings のバリデーションで共有する。
+ * 先頭を既定値とする（'newTab' = 現行挙動）。
+ */
+export const CLICK_BEHAVIORS = ['newTab', 'reuseSynced', 'background'] as const;
 
 /** storage.sync の 8KB/item 制限に対する防御（エラーではなく黙って切り詰める） */
 export const MAX_SYNC_GROUPS = 20;
@@ -60,6 +68,7 @@ export function defaultSettings(): Settings {
     sortCriteria: DEFAULT_SORT.map((c) => ({ ...c })),
     forceAlignOnRefresh: false,
     keepEmptyGroups: false,
+    clickBehavior: CLICK_BEHAVIORS[0],
     // id は固定文字列。ここで randomUUID() を呼ぶと読み込みごとに別IDになり
     // 所有権（SyncState.groups のキー）が壊れる。
     syncGroups: [{ id: 'default', name: 'Needs review', sectionIds: ['review-requested'] }],
@@ -154,6 +163,7 @@ export function mergeSettings(stored: unknown): Settings {
       ? { forceAlignOnRefresh: s.forceAlignOnRefresh }
       : {}),
     ...(typeof s.keepEmptyGroups === 'boolean' ? { keepEmptyGroups: s.keepEmptyGroups } : {}),
+    ...(isKnownClickBehavior(s.clickBehavior) ? { clickBehavior: s.clickBehavior } : {}),
     ...(Array.isArray(s.sortCriteria) ? { sortCriteria: sanitizeSort(s.sortCriteria) } : {}),
     ...(Array.isArray(s.syncGroups) ? { syncGroups: sanitizeSyncGroups(s.syncGroups) } : {}),
     ...(Array.isArray(s.customSections)
@@ -186,6 +196,11 @@ function isValidPollInterval(v: unknown): v is number {
 /** max_pr_age が既知値か（許可リスト照合）。未知値は既定値へフォールバック */
 function isKnownMaxPrAge(v: unknown): v is MaxPrAge {
   return typeof v === 'string' && (MAX_PR_AGE_VALUES as readonly string[]).includes(v);
+}
+
+/** clickBehavior が既知値か（許可リスト照合）。未知値は既定値へフォールバック */
+function isKnownClickBehavior(v: unknown): v is ClickBehavior {
+  return typeof v === 'string' && (CLICK_BEHAVIORS as readonly string[]).includes(v);
 }
 
 /** セクションid配列の検証: 非空文字のみ、重複除去（順序は保持） */

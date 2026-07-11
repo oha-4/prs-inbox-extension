@@ -1,9 +1,15 @@
 import { Inbox } from 'lucide-react';
-import type { InboxSection } from '../../types';
+import type { ClickBehavior, InboxSection } from '../../types';
 import { t } from '../../lib/i18n';
 import { PrRow } from './PrRow';
 
-export function SectionList({ sections }: { sections: InboxSection[] }): React.JSX.Element {
+export function SectionList({
+  sections,
+  clickBehavior,
+}: {
+  sections: InboxSection[];
+  clickBehavior: ClickBehavior;
+}): React.JSX.Element {
   const nonEmpty = sections.filter((s) => s.prs.length > 0);
   if (nonEmpty.length === 0) {
     return (
@@ -36,7 +42,7 @@ export function SectionList({ sections }: { sections: InboxSection[] }): React.J
             )}
           </h2>
           {section.prs.map((pr) => (
-            <PrRow key={pr.id} pr={pr} />
+            <PrRow key={pr.id} pr={pr} clickBehavior={clickBehavior} />
           ))}
         </section>
       ))}
