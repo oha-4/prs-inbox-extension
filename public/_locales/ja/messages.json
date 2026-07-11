@@ -72,8 +72,12 @@
     "message": "ポップアップに表示するセクションを選び、ドラッグで並べ替えます。表示のみ — 取得・バッジ件数・タブグループ同期には影響しません。"
   },
   "dragToReorder": { "message": "ドラッグで並べ替え" },
-  "toggleSectionVisibility": {
+  "showSectionInPopup": {
     "message": "$SECTION$ をポップアップに表示",
+    "placeholders": { "section": { "content": "$1" } }
+  },
+  "hideSectionInPopup": {
+    "message": "$SECTION$ をポップアップで非表示",
     "placeholders": { "section": { "content": "$1" } }
   },
   "sortHeader": { "message": "グループ内のタブの並び順" },
