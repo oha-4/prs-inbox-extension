@@ -1,17 +1,36 @@
-import { Inbox } from 'lucide-react';
+import { EyeOff, Inbox } from 'lucide-react';
 import type { ClickBehavior, InboxSection } from '../../types';
 import { t } from '../../lib/i18n';
+import { Button } from '@/components/ui/button';
 import { PrRow } from './PrRow';
 
 export function SectionList({
   sections,
   clickBehavior,
+  allHidden = false,
+  onOpenSettings,
 }: {
   sections: InboxSection[];
   clickBehavior: ClickBehavior;
+  /** フィルタ後のセクションが全て非表示指定で、表示対象が0件になった状態 */
+  allHidden?: boolean;
+  onOpenSettings?: () => void;
 }): React.JSX.Element {
   const nonEmpty = sections.filter((s) => s.prs.length > 0);
   if (nonEmpty.length === 0) {
+    if (allHidden) {
+      return (
+        <div className="animate-in fade-in zoom-in-95 text-muted-foreground flex flex-col items-center gap-3 py-16 text-center duration-300">
+          <EyeOff className="size-8" strokeWidth={1.25} />
+          <span className="max-w-[240px] text-[13px] text-balance">{t('allSectionsHidden')}</span>
+          {onOpenSettings && (
+            <Button variant="outline" size="sm" onClick={onOpenSettings}>
+              {t('settings')}
+            </Button>
+          )}
+        </div>
+      );
+    }
     return (
       <div className="animate-in fade-in zoom-in-95 text-muted-foreground flex flex-col items-center gap-3 py-16 duration-300">
         <Inbox className="size-8" strokeWidth={1.25} />
