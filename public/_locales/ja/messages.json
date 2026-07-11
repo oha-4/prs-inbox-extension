@@ -88,6 +88,15 @@
   "allowlistLabel": { "message": "包含リスト（空なら全て表示）" },
   "blocklistLabel": { "message": "除外リスト" },
   "filterPlaceholder": { "message": "例:\nmy-org\nmy-org/some-repo" },
+  "saveErrorQuota": {
+    "message": "設定を保存できませんでした。包含/除外リストが大きすぎる可能性があります（Chromeの同期設定は約8KBが上限です）。表示は最後に保存された値へ戻しました。リストを短くして再度お試しください。"
+  },
+  "saveErrorGeneric": {
+    "message": "設定を保存できませんでした。表示は最後に保存された値へ戻しました。"
+  },
+  "saveWarnNearQuota": {
+    "message": "設定がChromeの同期上限（約8KB）に近づいています。これ以上包含/除外リストを増やすと保存に失敗する可能性があります。"
+  },
   "debugHeader": { "message": "デバッグ" },
   "debugModeLabel": { "message": "デバッグモード（パース失敗時に生レスポンスを保存）" },
   "dumpButton": { "message": "全セクションの生レスポンスをダンプ" },

@@ -16,6 +16,7 @@ import {
   Loader2,
   Plus,
   Trash2,
+  TriangleAlert,
   X,
   Zap,
 } from 'lucide-react';
@@ -51,6 +52,7 @@ import {
   orderedInboxSections,
   SORT_KEYS,
 } from '../../lib/settings';
+import { isNearQuota } from '../../lib/settingsSave';
 import { sendMessage } from '../../messages';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -69,6 +71,20 @@ import {
 interface Props {
   settings: SettingsType;
   update: (mutate: (s: SettingsType) => SettingsType) => void;
+  saveError?: string | null;
+}
+
+/** 保存失敗 / 上限手前の警告を出す帯。i18n キーを表示する。 */
+function SaveWarning({ messageKey }: { messageKey: string }): React.JSX.Element {
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 text-[12px] leading-relaxed text-amber-700 dark:text-amber-400"
+    >
+      <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+      <span>{t(messageKey)}</span>
+    </div>
+  );
 }
 
 function SectionHeader({
@@ -119,11 +135,14 @@ function HintPopover({ text }: { text: string }): React.JSX.Element {
   );
 }
 
-export function SettingsView({ settings, update }: Props): React.JSX.Element {
+export function SettingsView({ settings, update, saveError }: Props): React.JSX.Element {
   const sections = listSections(settings);
+  const nearQuota = isNearQuota(settings);
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 space-y-4 overflow-y-auto p-3 pb-5 duration-200">
+      {saveError && <SaveWarning messageKey={saveError} />}
+      {!saveError && nearQuota && <SaveWarning messageKey="saveWarnNearQuota" />}
       <section className="space-y-3">
         <SectionHeader icon={Inbox}>{t('inboxHeader')}</SectionHeader>
         <div className="space-y-2">
