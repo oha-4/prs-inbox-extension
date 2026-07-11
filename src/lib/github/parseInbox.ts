@@ -7,6 +7,8 @@ export interface ParsedInboxPage {
   currentPage: number;
   totalPages: number;
   totalCount: number;
+  /** フォールバック走査で採用した payload 直下のキー名。確定キー使用時は undefined。 */
+  fallbackKey?: string;
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -25,15 +27,28 @@ export function parseInboxResponse(body: unknown): ParsedInboxPage {
   const payload = body.payload;
 
   let route: Record<string, unknown> | null = null;
+  let fallbackKey: string | undefined;
   const direct = payload.pullsInboxSurfaceContentRoute;
   if (isRecord(direct) && Array.isArray(direct.results)) {
     route = direct;
   } else {
-    for (const value of Object.values(payload)) {
+    // 確定キーが無い場合はフォールバック。誤ったデータセットの黙認を避けるため
+    // 候補を集め、キー名が /Route$/ にマッチするものを優先する。
+    const candidates: string[] = [];
+    for (const [key, value] of Object.entries(payload)) {
       if (isRecord(value) && Array.isArray(value.results)) {
-        route = value;
-        break;
+        candidates.push(key);
       }
+    }
+    const chosenKey = candidates.find((key) => /Route$/.test(key)) ?? candidates[0];
+    if (chosenKey !== undefined) {
+      if (candidates.length > 1) {
+        console.warn(
+          `parseInboxResponse: ${candidates.length} fallback candidates with results[] (${candidates.join(', ')}); using "${chosenKey}"`,
+        );
+      }
+      route = payload[chosenKey] as Record<string, unknown>;
+      fallbackKey = chosenKey;
     }
   }
   if (!route) throw new ParseError('no route with results[] in payload');
@@ -57,6 +72,7 @@ export function parseInboxResponse(body: unknown): ParsedInboxPage {
     currentPage: asNumber(pageInfo.currentPage, 1),
     totalPages: asNumber(pageInfo.totalPages, 1),
     totalCount: asNumber(pageInfo.totalCount, prs.length),
+    ...(fallbackKey !== undefined ? { fallbackKey } : {}),
   };
 }
 

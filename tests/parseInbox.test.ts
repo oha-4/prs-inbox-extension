@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ParseError, parseInboxResponse } from '../src/lib/github/parseInbox';
 import fixture from './fixtures/inbox-queries.json';
+
+const route = () => (fixture as Record<string, any>).payload.pullsInboxSurfaceContentRoute;
 
 describe('parseInboxResponse', () => {
   it('parses the real fixture payload', () => {
@@ -26,14 +28,55 @@ describe('parseInboxResponse', () => {
     expect(draft.isDraft).toBe(true);
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('falls back to scanning payload when the route key is renamed', () => {
     const renamed = {
       payload: {
-        someFutureRouteName: (fixture as Record<string, any>).payload.pullsInboxSurfaceContentRoute,
+        someFutureRouteName: route(),
       },
     };
     const page = parseInboxResponse(renamed);
     expect(page.prs).toHaveLength(3);
+    expect(page.fallbackKey).toBe('someFutureRouteName');
+  });
+
+  it('prefers a *Route key over other results-bearing objects in fallback', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const page = parseInboxResponse({
+      payload: {
+        // 別データセット（0件）。誤って採用されると prs が空になる。
+        bar: { results: [], pageInfo: { currentPage: 1, totalPages: 1, totalCount: 0 } },
+        fooRoute: route(),
+      },
+    });
+    expect(page.fallbackKey).toBe('fooRoute');
+    expect(page.prs).toHaveLength(3);
+    // 複数候補があったので警告が出る。
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain('fooRoute');
+  });
+
+  it('uses the first results-bearing object when no *Route key exists', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const page = parseInboxResponse({
+      payload: {
+        first: route(),
+        second: { results: [], pageInfo: { currentPage: 1, totalPages: 1, totalCount: 0 } },
+      },
+    });
+    expect(page.fallbackKey).toBe('first');
+    expect(page.prs).toHaveLength(3);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not warn when only a single fallback candidate exists', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const page = parseInboxResponse({ payload: { onlyRoute: route() } });
+    expect(page.fallbackKey).toBe('onlyRoute');
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('throws ParseError when payload is missing', () => {
