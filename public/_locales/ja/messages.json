@@ -56,7 +56,9 @@
   "keepEmptyGroupsHint": {
     "message": "グループが空になると、Inbox Zeroページ（この拡張機能のWebサイト）をプレースホルダータブとして開き、グループの位置を保ちます。"
   },
-  "inboxSectionsHeader": { "message": "Inboxのセクション" },
+  "showHint": { "message": "この設定の説明を表示" },
+  "inboxHeader": { "message": "Inbox（ポップアップ）" },
+  "inboxSectionsHeader": { "message": "セクション" },
   "inboxSectionsHint": {
     "message": "ポップアップに表示するセクションを選び、ドラッグで並べ替えます。表示のみ — 取得・バッジ件数・タブグループ同期には影響しません。"
   },
@@ -65,7 +67,7 @@
     "message": "$SECTION$ をポップアップに表示",
     "placeholders": { "section": { "content": "$1" } }
   },
-  "sortHeader": { "message": "グループ内の並び順" },
+  "sortHeader": { "message": "グループ内のタブの並び順" },
   "sortHint": { "message": "各グループ内のタブの並び順（最大2段）" },
   "sortAddLevel": { "message": "条件を追加" },
   "sortRemove": { "message": "削除" },
@@ -74,7 +76,7 @@
   "sortKeyUpdated": { "message": "更新日" },
   "sortDirOld": { "message": "古い順" },
   "sortDirNew": { "message": "新しい順" },
-  "fetchHeader": { "message": "取得" },
+  "fetchHeader": { "message": "データ取得" },
   "pollIntervalLabel": { "message": "ポーリング間隔（分）" },
   "maxPrAgeLabel": { "message": "PRの最大経過時間" },
   "age1m": { "message": "1ヶ月" },

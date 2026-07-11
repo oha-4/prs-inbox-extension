@@ -10,6 +10,8 @@ import {
   Filter,
   FolderSync,
   GripVertical,
+  Inbox,
+  Info,
   ListFilter,
   Loader2,
   Plus,
@@ -51,6 +53,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -73,11 +76,43 @@ function SectionHeader({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <h2 className="text-foreground font-display m-0 flex items-center gap-1.5 text-[11px] font-bold tracking-[0.08em] uppercase">
-      <span className="bg-signal h-3 w-0.5 shrink-0 rounded-full" aria-hidden />
-      <Icon className="text-muted-foreground size-3.5" />
+    <h2 className="text-foreground font-display flex items-center gap-2 text-sm font-bold tracking-[0.04em] uppercase">
+      <span className="bg-signal h-4 w-[3px] shrink-0 rounded-full" aria-hidden />
+      <Icon className="text-muted-foreground size-4" />
       {children}
     </h2>
+  );
+}
+
+// テーマ見出しより一段小さいサブ見出し（signal バーなし・アイコン任意）
+function SubHeader({
+  icon: Icon,
+  children,
+}: {
+  icon?: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <h3 className="text-foreground flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.06em] uppercase">
+      {Icon && <Icon className="text-muted-foreground size-3.5 shrink-0" />}
+      {children}
+    </h3>
+  );
+}
+
+/** ラベル横の ⓘ から開く補足説明（常設表示には長すぎる文言用） */
+function HintPopover({ text }: { text: string }): React.JSX.Element {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="size-5 shrink-0" aria-label={t('showHint')}>
+          <Info className="text-muted-foreground size-3.5" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="text-muted-foreground w-72 p-2.5 text-[11px] leading-relaxed">
+        {text}
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -85,10 +120,42 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
   const sections = listSections(settings);
 
   return (
-    <div className="animate-in fade-in slide-in-from-right-4 space-y-5 overflow-y-auto p-3 duration-200">
-      <section className="space-y-2">
-        <SectionHeader icon={FolderSync}>{t('tabGroupSyncHeader')}</SectionHeader>
-        <p className="text-muted-foreground m-0 text-[11px]">{t('tabGroupSyncHint')}</p>
+    <div className="animate-in fade-in slide-in-from-right-4 space-y-4 overflow-y-auto p-3 pb-5 duration-200">
+      <section className="space-y-3">
+        <SectionHeader icon={Inbox}>{t('inboxHeader')}</SectionHeader>
+        <div className="space-y-2">
+          <SubHeader icon={Eye}>{t('inboxSectionsHeader')}</SubHeader>
+          <p className="text-muted-foreground text-[11px]">{t('inboxSectionsHint')}</p>
+          <InboxSectionList settings={settings} update={update} />
+        </div>
+        <div className="space-y-2">
+          <SubHeader icon={Bell}>{t('badgeHeader')}</SubHeader>
+          <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+            <Switch
+              checked={settings.badgeEnabled}
+              onCheckedChange={(checked) => update((s) => ({ ...s, badgeEnabled: checked }))}
+            />
+            {t('badgeEnabledLabel')}
+          </label>
+          {settings.badgeEnabled && (
+            <label className="animate-in fade-in flex cursor-pointer items-center gap-2 pl-7 text-[13px] duration-200">
+              <Switch
+                checked={settings.badgeIncludeTeamReview}
+                onCheckedChange={(checked) =>
+                  update((s) => ({ ...s, badgeIncludeTeamReview: checked }))
+                }
+              />
+              {t('badgeIncludeTeamLabel')}
+            </label>
+          )}
+        </div>
+      </section>
+
+      <section className="space-y-3 border-t pt-4">
+        <div className="space-y-1.5">
+          <SectionHeader icon={FolderSync}>{t('tabGroupSyncHeader')}</SectionHeader>
+          <p className="text-muted-foreground text-[11px]">{t('tabGroupSyncHint')}</p>
+        </div>
         <div className="space-y-2">
           {settings.syncGroups.map((g) => {
             const trimmedName = g.name.trim();
@@ -139,230 +206,204 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
                   }
                 />
                 {trimmedName.length === 0 && (
-                  <p className="m-0 text-[11px] text-amber-600 dark:text-amber-500">
+                  <p className="text-[11px] text-amber-600 dark:text-amber-500">
                     {t('groupNameEmptyHint')}
                   </p>
                 )}
                 {g.sectionIds.length === 0 && (
-                  <p className="m-0 text-[11px] text-amber-600 dark:text-amber-500">
+                  <p className="text-[11px] text-amber-600 dark:text-amber-500">
                     {t('groupNoSectionsHint')}
                   </p>
                 )}
                 {duplicate && (
-                  <p className="m-0 text-[11px] text-amber-600 dark:text-amber-500">
+                  <p className="text-[11px] text-amber-600 dark:text-amber-500">
                     {t('groupNameDuplicateHint')}
                   </p>
                 )}
               </div>
             );
           })}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground h-7 gap-1 px-2 text-[11px]"
+            disabled={settings.syncGroups.length >= MAX_SYNC_GROUPS}
+            onClick={() =>
+              update((s) => ({
+                ...s,
+                syncGroups: [
+                  ...s.syncGroups,
+                  { id: crypto.randomUUID(), name: '', sectionIds: [] },
+                ],
+              }))
+            }
+          >
+            <Plus className="size-3" />
+            {t('addGroup')}
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground h-7 gap-1 px-2 text-[11px]"
-          disabled={settings.syncGroups.length >= MAX_SYNC_GROUPS}
-          onClick={() =>
-            update((s) => ({
-              ...s,
-              syncGroups: [...s.syncGroups, { id: crypto.randomUUID(), name: '', sectionIds: [] }],
-            }))
-          }
-        >
-          <Plus className="size-3" />
-          {t('addGroup')}
-        </Button>
-        <label className="flex cursor-pointer items-center gap-2 text-[13px]">
-          <Switch
-            checked={settings.autoCloseRemoved}
-            onCheckedChange={(checked) => update((s) => ({ ...s, autoCloseRemoved: checked }))}
-          />
-          {t('autoCloseLabel')}
-        </label>
-        <label className="flex cursor-pointer items-center gap-2 text-[13px]">
-          <Switch
-            checked={settings.forceAlignOnRefresh}
-            onCheckedChange={(checked) => update((s) => ({ ...s, forceAlignOnRefresh: checked }))}
-          />
-          {t('forceAlignOnRefreshLabel')}
-        </label>
-        <label className="flex cursor-pointer items-center gap-2 text-[13px]">
-          <Switch
-            checked={settings.keepEmptyGroups}
-            onCheckedChange={(checked) => update((s) => ({ ...s, keepEmptyGroups: checked }))}
-          />
-          {t('keepEmptyGroupsLabel')}
-        </label>
-        {settings.keepEmptyGroups && (
-          <p className="text-muted-foreground animate-in fade-in m-0 pl-7 text-[11px] duration-200">
-            {t('keepEmptyGroupsHint')}
-          </p>
-        )}
+        <div className="space-y-2">
+          <SubHeader icon={ArrowDownUp}>{t('sortHeader')}</SubHeader>
+          <p className="text-muted-foreground text-[11px]">{t('sortHint')}</p>
+          <SortEditor settings={settings} update={update} />
+        </div>
+        <div className="space-y-2">
+          <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+            <Switch
+              checked={settings.autoCloseRemoved}
+              onCheckedChange={(checked) => update((s) => ({ ...s, autoCloseRemoved: checked }))}
+            />
+            {t('autoCloseLabel')}
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+            <Switch
+              checked={settings.forceAlignOnRefresh}
+              onCheckedChange={(checked) => update((s) => ({ ...s, forceAlignOnRefresh: checked }))}
+            />
+            {t('forceAlignOnRefreshLabel')}
+          </label>
+          <div className="flex items-center gap-1">
+            <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+              <Switch
+                checked={settings.keepEmptyGroups}
+                onCheckedChange={(checked) => update((s) => ({ ...s, keepEmptyGroups: checked }))}
+              />
+              {t('keepEmptyGroupsLabel')}
+            </label>
+            <HintPopover text={t('keepEmptyGroupsHint')} />
+          </div>
+        </div>
         <ForceAlignButton />
       </section>
 
-      <section className="space-y-2">
-        <SectionHeader icon={ListFilter}>{t('customSectionHeader')}</SectionHeader>
-        <p className="text-muted-foreground m-0 text-[11px]">{t('customSectionHint')}</p>
-        {settings.customSections.map((ci) => (
-          <div key={ci.id} className="flex items-center gap-1.5">
-            <DebouncedText
-              value={ci.name}
-              placeholder={t('customSectionNamePlaceholder')}
-              className="w-24"
-              onCommit={(v) =>
-                update((s) => ({
-                  ...s,
-                  customSections: s.customSections.map((x) =>
-                    x.id === ci.id ? { ...x, name: v } : x,
-                  ),
-                }))
-              }
-            />
-            <DebouncedText
-              value={ci.query}
-              placeholder={t('customSectionQueryPlaceholder')}
-              className="flex-1 font-mono text-[11px]"
-              onCommit={(v) =>
-                update((s) => ({
-                  ...s,
-                  customSections: s.customSections.map((x) =>
-                    x.id === ci.id ? { ...x, query: v } : x,
-                  ),
-                }))
-              }
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 shrink-0"
-              aria-label={t('deleteCustomSection')}
-              onClick={() =>
-                update((s) => ({
-                  ...s,
-                  customSections: s.customSections.filter((x) => x.id !== ci.id),
-                  syncGroups: s.syncGroups.map((gr) =>
-                    gr.sectionIds.includes(ci.id)
-                      ? { ...gr, sectionIds: gr.sectionIds.filter((id) => id !== ci.id) }
-                      : gr,
-                  ),
-                  hiddenSections: s.hiddenSections.filter((id) => id !== ci.id),
-                  inboxOrder: s.inboxOrder.filter((id) => id !== ci.id),
-                }))
-              }
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
-          </div>
-        ))}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground h-7 gap-1 px-2 text-[11px]"
-          disabled={settings.customSections.length >= MAX_CUSTOM_SECTIONS}
-          onClick={() =>
-            update((s) => ({
-              ...s,
-              customSections: [
-                ...s.customSections,
-                { id: `${CUSTOM_SECTION_PREFIX}${crypto.randomUUID()}`, name: '', query: '' },
-              ],
-            }))
-          }
-        >
-          <Plus className="size-3" />
-          {t('addCustomSection')}
-        </Button>
-      </section>
-
-      <section className="space-y-2">
-        <SectionHeader icon={Eye}>{t('inboxSectionsHeader')}</SectionHeader>
-        <p className="text-muted-foreground m-0 text-[11px]">{t('inboxSectionsHint')}</p>
-        <InboxSectionList settings={settings} update={update} />
-      </section>
-
-      <section className="space-y-2">
-        <SectionHeader icon={ArrowDownUp}>{t('sortHeader')}</SectionHeader>
-        <p className="text-muted-foreground m-0 text-[11px]">{t('sortHint')}</p>
-        <SortEditor settings={settings} update={update} />
-      </section>
-
-      <section className="space-y-2">
-        <SectionHeader icon={Bell}>{t('badgeHeader')}</SectionHeader>
-        <label className="flex cursor-pointer items-center gap-2 text-[13px]">
-          <Switch
-            checked={settings.badgeEnabled}
-            onCheckedChange={(checked) => update((s) => ({ ...s, badgeEnabled: checked }))}
-          />
-          {t('badgeEnabledLabel')}
-        </label>
-        {settings.badgeEnabled && (
-          <label className="animate-in fade-in flex cursor-pointer items-center gap-2 pl-7 text-[13px] duration-200">
-            <Switch
-              checked={settings.badgeIncludeTeamReview}
-              onCheckedChange={(checked) =>
-                update((s) => ({ ...s, badgeIncludeTeamReview: checked }))
-              }
-            />
-            {t('badgeIncludeTeamLabel')}
-          </label>
-        )}
-      </section>
-
-      <section className="space-y-2">
+      <section className="space-y-3 border-t pt-4">
         <SectionHeader icon={CloudDownload}>{t('fetchHeader')}</SectionHeader>
-        <label className="flex items-center justify-between gap-2 text-[13px]">
-          {t('pollIntervalLabel')}
-          <Input
-            type="number"
-            min={1}
-            max={120}
-            className="h-7 w-16 text-xs"
-            value={settings.pollIntervalMinutes}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (Number.isFinite(v) && v >= 1) {
-                update((s) => ({ ...s, pollIntervalMinutes: Math.floor(v) }));
-              }
-            }}
-          />
-        </label>
-        <label className="flex items-center justify-between gap-2 text-[13px]">
-          {t('maxPrAgeLabel')}
-          <Select
-            value={settings.maxPrAge}
-            onValueChange={(v) => update((s) => ({ ...s, maxPrAge: v }))}
+        <div className="space-y-2">
+          <SubHeader icon={ListFilter}>{t('customSectionHeader')}</SubHeader>
+          <p className="text-muted-foreground text-[11px]">{t('customSectionHint')}</p>
+          {settings.customSections.map((ci) => (
+            <div key={ci.id} className="flex items-center gap-1.5">
+              <DebouncedText
+                value={ci.name}
+                placeholder={t('customSectionNamePlaceholder')}
+                className="w-24"
+                onCommit={(v) =>
+                  update((s) => ({
+                    ...s,
+                    customSections: s.customSections.map((x) =>
+                      x.id === ci.id ? { ...x, name: v } : x,
+                    ),
+                  }))
+                }
+              />
+              <DebouncedText
+                value={ci.query}
+                placeholder={t('customSectionQueryPlaceholder')}
+                className="flex-1 font-mono text-[11px]"
+                onCommit={(v) =>
+                  update((s) => ({
+                    ...s,
+                    customSections: s.customSections.map((x) =>
+                      x.id === ci.id ? { ...x, query: v } : x,
+                    ),
+                  }))
+                }
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 shrink-0"
+                aria-label={t('deleteCustomSection')}
+                onClick={() =>
+                  update((s) => ({
+                    ...s,
+                    customSections: s.customSections.filter((x) => x.id !== ci.id),
+                    syncGroups: s.syncGroups.map((gr) =>
+                      gr.sectionIds.includes(ci.id)
+                        ? { ...gr, sectionIds: gr.sectionIds.filter((id) => id !== ci.id) }
+                        : gr,
+                    ),
+                    hiddenSections: s.hiddenSections.filter((id) => id !== ci.id),
+                    inboxOrder: s.inboxOrder.filter((id) => id !== ci.id),
+                  }))
+                }
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </div>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground h-7 gap-1 px-2 text-[11px]"
+            disabled={settings.customSections.length >= MAX_CUSTOM_SECTIONS}
+            onClick={() =>
+              update((s) => ({
+                ...s,
+                customSections: [
+                  ...s.customSections,
+                  { id: `${CUSTOM_SECTION_PREFIX}${crypto.randomUUID()}`, name: '', query: '' },
+                ],
+              }))
+            }
           >
-            <SelectTrigger size="sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1m">{t('age1m')}</SelectItem>
-              <SelectItem value="1y">{t('age1y')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </label>
+            <Plus className="size-3" />
+            {t('addCustomSection')}
+          </Button>
+        </div>
+        <div className="space-y-2">
+          <label className="flex items-center justify-between gap-2 text-[13px]">
+            {t('pollIntervalLabel')}
+            <Input
+              type="number"
+              min={1}
+              max={120}
+              className="h-7 w-16 text-xs"
+              value={settings.pollIntervalMinutes}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (Number.isFinite(v) && v >= 1) {
+                  update((s) => ({ ...s, pollIntervalMinutes: Math.floor(v) }));
+                }
+              }}
+            />
+          </label>
+          <label className="flex items-center justify-between gap-2 text-[13px]">
+            {t('maxPrAgeLabel')}
+            <Select
+              value={settings.maxPrAge}
+              onValueChange={(v) => update((s) => ({ ...s, maxPrAge: v }))}
+            >
+              <SelectTrigger size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1m">{t('age1m')}</SelectItem>
+                <SelectItem value="1y">{t('age1y')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+        </div>
+        <div className="space-y-2">
+          <SubHeader icon={Filter}>{t('filtersHeader')}</SubHeader>
+          <label className="flex flex-col gap-1 text-[13px]">
+            {t('allowlistLabel')}
+            <DebouncedTextarea
+              value={settings.allowlist.join('\n')}
+              onCommit={(v) => update((s) => ({ ...s, allowlist: parseList(v) }))}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-[13px]">
+            {t('blocklistLabel')}
+            <DebouncedTextarea
+              value={settings.blocklist.join('\n')}
+              onCommit={(v) => update((s) => ({ ...s, blocklist: parseList(v) }))}
+            />
+          </label>
+        </div>
       </section>
 
-      <section className="space-y-2">
-        <SectionHeader icon={Filter}>{t('filtersHeader')}</SectionHeader>
-        <label className="flex flex-col gap-1 text-[13px]">
-          {t('allowlistLabel')}
-          <DebouncedTextarea
-            value={settings.allowlist.join('\n')}
-            onCommit={(v) => update((s) => ({ ...s, allowlist: parseList(v) }))}
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-[13px]">
-          {t('blocklistLabel')}
-          <DebouncedTextarea
-            value={settings.blocklist.join('\n')}
-            onCommit={(v) => update((s) => ({ ...s, blocklist: parseList(v) }))}
-          />
-        </label>
-      </section>
-
-      <section className="space-y-2">
+      <section className="space-y-3 border-t pt-4">
         <SectionHeader icon={Bug}>{t('debugHeader')}</SectionHeader>
         <label className="flex cursor-pointer items-center gap-2 text-[13px]">
           <Switch
