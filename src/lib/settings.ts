@@ -148,6 +148,8 @@ export function mergeSettings(stored: unknown): Settings {
   const base = defaultSettings();
   if (typeof stored !== 'object' || stored === null) return base;
   const s = stored as Partial<Settings>;
+  // v1.0.0 の per-section 設定（現行 Settings 型には無いキー）
+  const legacySections = (s as { sections?: unknown }).sections;
   return {
     ...base,
     ...(isValidPollInterval(s.pollIntervalMinutes)
@@ -165,7 +167,15 @@ export function mergeSettings(stored: unknown): Settings {
     ...(typeof s.keepEmptyGroups === 'boolean' ? { keepEmptyGroups: s.keepEmptyGroups } : {}),
     ...(isKnownClickBehavior(s.clickBehavior) ? { clickBehavior: s.clickBehavior } : {}),
     ...(Array.isArray(s.sortCriteria) ? { sortCriteria: sanitizeSort(s.sortCriteria) } : {}),
-    ...(Array.isArray(s.syncGroups) ? { syncGroups: sanitizeSyncGroups(s.syncGroups) } : {}),
+    // 1) syncGroups があれば従来どおり（マイグレーションしない。旧 sections は無視）
+    // 2) 無くて旧 sections があれば移行（結果が [] でも必ず上書き＝全OFFユーザーを
+    //    デフォルトへフォールバックさせないのがこの分岐の主眼）
+    // 3) どちらも無ければデフォルトのまま
+    ...(Array.isArray(s.syncGroups)
+      ? { syncGroups: sanitizeSyncGroups(s.syncGroups) }
+      : typeof legacySections === 'object' && legacySections !== null
+        ? { syncGroups: migrateLegacySections(legacySections) }
+        : {}),
     ...(Array.isArray(s.customSections)
       ? { customSections: sanitizeCustomSections(s.customSections) }
       : {}),
@@ -240,6 +250,39 @@ function sanitizeSyncGroups(raw: unknown[]): SyncGroup[] {
     out.push({ id: g.id, name: typeof g.name === 'string' ? g.name.trim() : '', sectionIds });
   }
   return out;
+}
+
+/**
+ * v1.0.0 の per-section 設定（sections: Record<SectionId, { enabled, groupName, ... }>）を
+ * 現行の group-first な SyncGroup[] へ移行する。enabled === true かつ groupName が非空の
+ * セクションのみ採用し、同名 groupName を1グループに統合する（旧仕様の統合ルール）。
+ * 未知キーは無視（旧設定のキーは既知 SectionId のみ）。全レベルを unknown として検証する。
+ *
+ * ID は 'legacy:' + groupName で決定的に生成する（randomUUID 禁止）。mergeSettings は
+ * 読み込みのたびに実行され結果は書き戻されないため、ID が毎回変わると
+ * SyncState.groups（chrome グループ所有権レジストリ）のキーが壊れる。
+ * defaultSettings の 'default' 固定IDと同趣旨。
+ */
+function migrateLegacySections(sections: unknown): SyncGroup[] {
+  if (typeof sections !== 'object' || sections === null) return [];
+  const rec = sections as Record<string, unknown>;
+  const byName = new Map<string, SyncGroup>();
+  // SECTION_ORDER（正準順）で走査 → グループ内 sectionIds も自然に正準順になる
+  for (const id of SECTION_ORDER) {
+    const cfg = rec[id];
+    if (typeof cfg !== 'object' || cfg === null) continue;
+    const c = cfg as { enabled?: unknown; groupName?: unknown };
+    if (c.enabled !== true || !isNonEmptyString(c.groupName)) continue;
+    const name = c.groupName.trim();
+    let group = byName.get(name);
+    if (!group) {
+      if (byName.size >= MAX_SYNC_GROUPS) continue;
+      group = { id: `legacy:${name}`, name, sectionIds: [] };
+      byName.set(name, group);
+    }
+    group.sectionIds.push(id);
+  }
+  return [...byName.values()];
 }
 
 /** カスタムセクションの検証。id は CUSTOM_SECTION_PREFIX 必須。name/query は空を許容 */

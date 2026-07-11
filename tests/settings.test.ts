@@ -30,11 +30,13 @@ describe('mergeSettings', () => {
     expect(s.customSections).toEqual([]);
   });
 
-  it('ignores the legacy sections key (pre-group-first schema)', () => {
+  it('migrates the legacy sections key (pre-group-first schema) into syncGroups', () => {
     const s = mergeSettings({
       sections: { 'your-drafts': { enabled: true, groupName: 'Drafts', groupColor: 'blue' } },
     });
-    expect(s).toEqual(defaultSettings());
+    expect(s.syncGroups).toEqual([
+      { id: 'legacy:Drafts', name: 'Drafts', sectionIds: ['your-drafts'] },
+    ]);
   });
 
   it('keeps stored overrides and fills missing fields', () => {
@@ -222,6 +224,115 @@ describe('mergeSettings', () => {
       expect(mergeSettings({ customSections: many }).customSections).toHaveLength(
         MAX_CUSTOM_SECTIONS,
       );
+    });
+  });
+
+  describe('legacy v1.0.0 sections migration', () => {
+    // v1.0.0 の defaultSettings 相当（全7セクション、review-requested のみ enabled）
+    const legacyDefault = () => ({
+      sections: {
+        'review-requested': {
+          enabled: true,
+          label: 'Needs your review',
+          groupName: 'Needs review',
+          groupColor: 'yellow',
+        },
+        'team-review-requested': {
+          enabled: false,
+          label: "Needs your team's review",
+          groupName: 'Needs review',
+          groupColor: 'yellow',
+        },
+        'needs-action': {
+          enabled: false,
+          label: 'Needs action',
+          groupName: 'Needs review',
+          groupColor: 'yellow',
+        },
+        'waiting-for-review': {
+          enabled: false,
+          label: 'Waiting for review',
+          groupName: 'Needs review',
+          groupColor: 'yellow',
+        },
+        'your-drafts': {
+          enabled: false,
+          label: 'Your drafts',
+          groupName: 'Needs review',
+          groupColor: 'yellow',
+        },
+        'ready-to-merge': {
+          enabled: false,
+          label: 'Ready to merge',
+          groupName: 'Needs review',
+          groupColor: 'yellow',
+        },
+        'merge-queue': {
+          enabled: false,
+          label: 'Merge queue',
+          groupName: 'Needs review',
+          groupColor: 'yellow',
+        },
+      },
+    });
+
+    it('migrates the v1.0.0 default (only review-requested enabled)', () => {
+      expect(mergeSettings(legacyDefault()).syncGroups).toEqual([
+        { id: 'legacy:Needs review', name: 'Needs review', sectionIds: ['review-requested'] },
+      ]);
+    });
+
+    it('migrates an all-off legacy config to [] (no fallback to the default group)', () => {
+      const legacy = legacyDefault();
+      legacy.sections['review-requested'].enabled = false;
+      expect(mergeSettings(legacy).syncGroups).toEqual([]);
+    });
+
+    it('groups by groupName: shared names merge (first-seen order), sectionIds in SECTION_ORDER', () => {
+      const s = mergeSettings({
+        sections: {
+          // 初出は your-drafts の 'Mine'、次に review-requested/needs-action の 'Reviews'
+          'your-drafts': { enabled: true, groupName: 'Mine', groupColor: 'blue' },
+          'needs-action': { enabled: true, groupName: 'Reviews', groupColor: 'green' },
+          'review-requested': { enabled: true, groupName: 'Reviews', groupColor: 'green' },
+        },
+      });
+      expect(s.syncGroups).toEqual([
+        // グループ順は初出順（SECTION_ORDER 走査で review-requested → needs-action →
+        // your-drafts の順に評価されるため Reviews が先）
+        {
+          id: 'legacy:Reviews',
+          name: 'Reviews',
+          sectionIds: ['review-requested', 'needs-action'],
+        },
+        { id: 'legacy:Mine', name: 'Mine', sectionIds: ['your-drafts'] },
+      ]);
+    });
+
+    it('prefers syncGroups over legacy sections (no migration when both present)', () => {
+      const s = mergeSettings({
+        syncGroups: [{ id: 'g1', name: 'Work', sectionIds: ['your-drafts'] }],
+        sections: { 'review-requested': { enabled: true, groupName: 'Needs review' } },
+      });
+      expect(s.syncGroups).toEqual([{ id: 'g1', name: 'Work', sectionIds: ['your-drafts'] }]);
+    });
+
+    it('skips malformed entries and yields [] when all are invalid', () => {
+      const s = mergeSettings({
+        sections: {
+          'review-requested': null,
+          'team-review-requested': { enabled: 1, groupName: 'Truthy' }, // enabled が true でない
+          'needs-action': { enabled: true, groupName: '' }, // 空 groupName
+          'waiting-for-review': { enabled: true, groupName: '   ' }, // 空白のみ
+          'your-drafts': { enabled: true, groupName: 42 }, // 非文字列
+        },
+      });
+      expect(s.syncGroups).toEqual([]);
+    });
+
+    it('is deterministic: identical input yields identical (stable-id) output twice', () => {
+      const input = legacyDefault();
+      expect(mergeSettings(input)).toEqual(mergeSettings(input));
     });
   });
 });
