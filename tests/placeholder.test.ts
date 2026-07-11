@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { OwnedTab } from '../src/types';
 import {
   isPlaceholderId,
   makePlaceholderUrl,
+  orphanedPlaceholderTabIds,
   PLACEHOLDER_URL_BASE,
   placeholderKey,
   placeholderPrId,
@@ -74,5 +76,50 @@ describe('isPlaceholderId', () => {
     expect(isPlaceholderId(placeholderPrId('g1'))).toBe(true);
     expect(isPlaceholderId('PR_kwDOAbc123')).toBe(false);
     expect(isPlaceholderId('')).toBe(false);
+  });
+});
+
+describe('orphanedPlaceholderTabIds', () => {
+  const placeholderTab = (tabId: number, groupId: string): OwnedTab => ({
+    tabId,
+    prId: placeholderPrId(groupId),
+    prUrl: makePlaceholderUrl(groupId, `Group ${groupId}`),
+    groupId,
+  });
+  const prTab = (tabId: number, groupId: string): OwnedTab => ({
+    tabId,
+    prId: 'PR_kwDOAbc123',
+    prUrl: 'https://github.com/acme/widgets/pull/1',
+    groupId,
+  });
+
+  it('closes placeholders whose group was deleted from settings', () => {
+    const owned = [placeholderTab(11, 'gone'), placeholderTab(22, 'kept')];
+    expect(orphanedPlaceholderTabIds(owned, new Set(['kept']))).toEqual([11]);
+  });
+
+  it('keeps placeholders whose group still exists', () => {
+    const owned = [placeholderTab(11, 'kept'), placeholderTab(22, 'also-kept')];
+    expect(orphanedPlaceholderTabIds(owned, new Set(['kept', 'also-kept']))).toEqual([]);
+  });
+
+  it('never closes PR tabs even when their group was deleted', () => {
+    const owned = [prTab(11, 'gone'), placeholderTab(22, 'gone')];
+    // released PR タブは対象外、プレースホルダのみ閉じる
+    expect(orphanedPlaceholderTabIds(owned, new Set())).toEqual([22]);
+  });
+
+  it('returns empty for no owned tabs', () => {
+    expect(orphanedPlaceholderTabIds([], new Set(['g1']))).toEqual([]);
+  });
+
+  it('handles several deleted groups at once', () => {
+    const owned = [
+      placeholderTab(1, 'a'),
+      placeholderTab(2, 'b'),
+      placeholderTab(3, 'c'),
+      prTab(4, 'a'),
+    ];
+    expect(orphanedPlaceholderTabIds(owned, new Set(['b']))).toEqual([1, 3]);
   });
 });

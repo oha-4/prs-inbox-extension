@@ -6,7 +6,7 @@ import {
   type DesiredTab,
   type ExistingTabInfo,
 } from '../lib/diff';
-import { tabKey } from '../lib/placeholder';
+import { orphanedPlaceholderTabIds, tabKey } from '../lib/placeholder';
 import { activeSyncGroups } from '../lib/settings';
 import { pickWindowId } from '../lib/windowPlacement';
 import { loadSettings, loadSnapshot, loadSyncState, saveSyncState } from '../storage';
@@ -48,9 +48,20 @@ async function syncTabsLocked(force: boolean): Promise<void> {
   // ロック内なので自己競合はなく、storage.session は quota/レート制限が実質ない。
   const persist = (ownedTabs: OwnedTab[]): Promise<void> => saveSyncState({ ownedTabs, groups });
 
+  // 設定に現存する全 sync group の id。削除されたグループに属する所有
+  // プレースホルダの孤児判定に使う（active/inactive は問わない）。
+  const knownGroupIds = new Set(settings.syncGroups.map((g) => g.id));
+
   const resultOwned = force
     ? await executeForce(desired, groups, persist)
-    : await executeNormal(desired, groups, state, settings.autoCloseRemoved, persist);
+    : await executeNormal(
+        desired,
+        groups,
+        state,
+        settings.autoCloseRemoved,
+        knownGroupIds,
+        persist,
+      );
 
   // ---- 並べ替え: 各グループのタブをソート順に整列 ----
   const keyToTabId = new Map(resultOwned.map((o) => [`${o.groupId} ${o.prId}`, o.tabId]));
@@ -113,19 +124,31 @@ async function executeNormal(
   groups: ResolvedGroups,
   state: SyncState,
   autoClose: boolean,
+  knownGroupIds: Set<string>,
   persist: (ownedTabs: OwnedTab[]) => Promise<void>,
 ): Promise<OwnedTab[]> {
-  // 所有タブの検証（消滅/PR・プレースホルダ離脱/グループ外移動 → 所有権放棄）
+  // 所有タブの検証（消滅/PR・プレースホルダ離脱/グループ外移動 → 所有権放棄）。
+  // グループ未解決で validOwned から外れた owned は unresolvedOwned に控えておき、
+  // 削除グループの孤児プレースホルダ掃除に使う（PR/ユーザータブは含めても
+  // orphanedPlaceholderTabIds がプレースホルダ以外を弾く）。
   const validOwned: OwnedTab[] = [];
+  const unresolvedOwned: OwnedTab[] = [];
   for (const ot of state.ownedTabs) {
     const tab = await chrome.tabs.get(ot.tabId).catch(() => null);
     if (!tab || tab.id === undefined) continue;
     const expectedKey = tabKey(ot.prUrl);
     if (expectedKey === null || tabKey(tabUrl(tab)) !== expectedKey) continue;
     const expectedGroupId = groups[ot.groupId]?.chromeGroupId;
-    if (expectedGroupId === undefined || tab.groupId !== expectedGroupId) continue;
+    if (expectedGroupId === undefined || tab.groupId !== expectedGroupId) {
+      unresolvedOwned.push(ot);
+      continue;
+    }
     validOwned.push(ot);
   }
+
+  // 設定から削除された sync group の孤児プレースホルダを掃除対象にする。
+  // URL 一致検証を通った（＝まだプレースホルダのままの）owned のみが対象。
+  const orphanCloses = orphanedPlaceholderTabIds(unresolvedOwned, knownGroupIds);
 
   // 全タブを渡す（url フィルタ付き query は読み込み中のタブを取りこぼす上、
   // プレースホルダ作成可否の「グループにタブが残るか」判定には任意のタブも必要）
@@ -171,11 +194,15 @@ async function executeNormal(
     }
   }
   // 一括 remove は無効IDが1つ混ざると全滅するため1件ずつ閉じる。
+  // plan.toClose（desired から消えた所有タブ）に加え、削除グループの孤児
+  // プレースホルダも同じ close 経路で閉じる（creates/moves の後 = 不変条件維持）。
   // 閉じ損ねてまだ存在するタブは所有権を戻し、次回同期で再試行する
-  // （手放すと「ユーザーのタブ」として尊重され二度と閉じなくなる）。
-  if (plan.toClose.length > 0) {
-    const ownedByTabId = new Map(validOwned.map((ot) => [ot.tabId, ot]));
-    const { stillOpen } = await removeTabsIndividually(plan.toClose);
+  // （手放すと「ユーザーのタブ」として尊重され二度と閉じなくなる。孤児
+  // プレースホルダも所有を保てば次回 run で再び孤児として掃除される）。
+  const closes = [...plan.toClose, ...orphanCloses];
+  if (closes.length > 0) {
+    const ownedByTabId = new Map([...validOwned, ...unresolvedOwned].map((ot) => [ot.tabId, ot]));
+    const { stillOpen } = await removeTabsIndividually(closes);
     for (const id of stillOpen) {
       const owned = ownedByTabId.get(id);
       if (owned) nextOwned.push(owned);
