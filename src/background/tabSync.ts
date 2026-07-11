@@ -6,7 +6,7 @@ import {
   type ExistingTabInfo,
 } from '../lib/diff';
 import { filterSections } from '../lib/filters';
-import { isSamePr, prUrlKey } from '../lib/prUrl';
+import { makePlaceholderUrl, placeholderPrId, tabKey } from '../lib/placeholder';
 import { SECTION_ORDER } from '../lib/settings';
 import { sortPrs } from '../lib/sortPrs';
 import { loadSettings, loadSnapshot, loadSyncState, saveSyncState } from '../storage';
@@ -77,9 +77,15 @@ function buildDesired(
 
   const seen = new Set<string>();
   const byGroup = new Map<string, { pr: PullRequest; color: TabGroupColor }[]>();
+  // keepEmptyGroups: 有効セクションのグループ名→色（セクション優先度で先勝ち）。
+  // PRが0件のセクションでも収集する必要があるため PR ループの外で行う。
+  const placeholderColorByGroup = new Map<string, TabGroupColor>();
   for (const section of ordered) {
     const cfg = settings.sections[section.id];
     if (!cfg?.enabled) continue;
+    if (settings.keepEmptyGroups && !placeholderColorByGroup.has(cfg.groupName)) {
+      placeholderColorByGroup.set(cfg.groupName, cfg.groupColor);
+    }
     for (const pr of section.prs) {
       if (seen.has(pr.id)) continue;
       seen.add(pr.id);
@@ -112,6 +118,21 @@ function buildDesired(
     }
     orderByGroup.set(groupName, ids);
   }
+
+  // keepEmptyGroups: PRが1件もないグループにはプレースホルダを1枚 desired に積む。
+  // orderByGroup への空登録は必須（Phase 0a のグループ養子縁組がキーを見る。並べ替えは <2 でスキップ）。
+  if (settings.keepEmptyGroups) {
+    for (const [groupName, groupColor] of placeholderColorByGroup) {
+      if (byGroup.has(groupName)) continue;
+      desired.push({
+        prId: placeholderPrId(groupName),
+        url: makePlaceholderUrl(groupName),
+        groupName,
+        groupColor,
+      });
+      orderByGroup.set(groupName, []);
+    }
+  }
   return { desired, orderByGroup };
 }
 
@@ -122,21 +143,23 @@ async function executeNormal(
   state: SyncState,
   autoClose: boolean,
 ): Promise<OwnedTab[]> {
-  // 所有タブの検証（消滅/PR離脱/グループ外移動 → 所有権放棄）
+  // 所有タブの検証（消滅/PR・プレースホルダ離脱/グループ外移動 → 所有権放棄）
   const validOwned: OwnedTab[] = [];
   for (const ot of state.ownedTabs) {
     const tab = await chrome.tabs.get(ot.tabId).catch(() => null);
     if (!tab || tab.id === undefined) continue;
-    if (!isSamePr(tabUrl(tab), ot.prUrl)) continue;
+    const expectedKey = tabKey(ot.prUrl);
+    if (expectedKey === null || tabKey(tabUrl(tab)) !== expectedKey) continue;
     const expectedGroupId = groupIds[ot.groupName];
     if (expectedGroupId === undefined || tab.groupId !== expectedGroupId) continue;
     validOwned.push(ot);
   }
 
-  // url フィルタ付き query は読み込み中（未コミット）のタブを取りこぼすため全件から絞る
+  // 全タブを渡す（url フィルタ付き query は読み込み中のタブを取りこぼす上、
+  // プレースホルダ作成可否の「グループにタブが残るか」判定には任意のタブも必要）
   const allTabs = await chrome.tabs.query({});
   const existingTabs: ExistingTabInfo[] = allTabs
-    .filter((t) => t.id !== undefined && prUrlKey(tabUrl(t)) !== null)
+    .filter((t) => t.id !== undefined)
     .map((t) => ({ tabId: t.id!, url: tabUrl(t), groupId: t.groupId ?? TAB_GROUP_ID_NONE }));
 
   const plan = computeTabSyncPlan({
@@ -148,8 +171,10 @@ async function executeNormal(
   });
 
   const nextOwned: OwnedTab[] = [...plan.keptOwned, ...plan.toAdopt];
-  if (plan.toClose.length > 0) await chrome.tabs.remove(plan.toClose).catch(() => {});
 
+  // 作成・移動が先、close は最後。close を先にすると最後のタブが閉じた瞬間に
+  // グループが消滅し、プレースホルダが末尾の新規グループに入って位置が失われる。
+  // 3集合は互いに素で close 対象IDは確定済みのため順序変更は安全。
   for (const mv of plan.toMove) {
     const groupId = await addTabToGroup(mv.tabId, mv.groupName, mv.groupColor, groupIds);
     if (groupId !== null) {
@@ -162,6 +187,7 @@ async function executeNormal(
       nextOwned.push({ tabId, prId: d.prId, prUrl: d.url, groupName: d.groupName });
     }
   }
+  if (plan.toClose.length > 0) await chrome.tabs.remove(plan.toClose).catch(() => {});
   return nextOwned;
 }
 
@@ -182,21 +208,20 @@ async function executeForce(
       groupName: nameByGroupId.get(t.groupId!)!,
     }));
 
+  // close は最後に実行する（先に閉じるとグループが一瞬空になり消滅→位置が失われる）。
+  // remainingByKey は close 前のスナップショット − close 予定で作るため結果は変わらない。
   const closes = forceExtraCloses(managedTabs, desired);
-  if (closes.length > 0) await chrome.tabs.remove(closes).catch(() => {});
-
-  // 残った管理タブを PR キーで引けるように
   const closedSet = new Set(closes);
   const remainingByKey = new Map<string, number>();
   for (const t of managedTabs) {
     if (closedSet.has(t.tabId)) continue;
-    const key = prUrlKey(t.url);
+    const key = tabKey(t.url);
     if (key && !remainingByKey.has(key)) remainingByKey.set(key, t.tabId);
   }
 
   const owned: OwnedTab[] = [];
   for (const d of desired) {
-    const key = prUrlKey(d.url);
+    const key = tabKey(d.url);
     const existing = key ? remainingByKey.get(key) : undefined;
     if (existing !== undefined) {
       owned.push({ tabId: existing, prId: d.prId, prUrl: d.url, groupName: d.groupName });
@@ -208,6 +233,7 @@ async function executeForce(
       }
     }
   }
+  if (closes.length > 0) await chrome.tabs.remove(closes).catch(() => {});
   return owned;
 }
 

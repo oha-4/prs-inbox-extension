@@ -35,6 +35,10 @@
   "badgeIncludeTeamLabel": { "message": "Include team review requests in the count" },
   "forceAlignOnRefreshLabel": { "message": "Force-align tab groups on every refresh" },
   "forceAlignNow": { "message": "Force-align now" },
+  "keepEmptyGroupsLabel": { "message": "Keep empty tab groups in place" },
+  "keepEmptyGroupsHint": {
+    "message": "When a group runs out of PRs, an Inbox Zero page (on this extension's website) is opened as a placeholder tab so the group keeps its position."
+  },
   "sortHeader": { "message": "Order within groups" },
   "sortHint": { "message": "Sort tabs inside each group (up to 2 levels)." },
   "sortAddLevel": { "message": "Add level" },

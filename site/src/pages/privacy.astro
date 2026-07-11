@@ -12,7 +12,7 @@ const t = ui.en;
 >
   <article class="prose-doc mx-auto max-w-2xl py-8">
     <h1 class="font-display text-3xl font-bold tracking-tight">Privacy Policy</h1>
-    <p class="text-muted-foreground mt-2 font-mono text-xs">Last updated: June 11, 2026</p>
+    <p class="text-muted-foreground mt-2 font-mono text-xs">Last updated: July 11, 2026</p>
 
     <div class="bg-card mt-8 rounded-lg border p-5">
       <p class="m-0 text-sm leading-relaxed">
@@ -35,6 +35,13 @@ const t = ui.en;
       The only host the extension communicates with is <code>https://github.com</code>, matching
       its sole host permission. There are no third-party requests of any kind — no analytics
       services, no crash reporters, no CDNs.
+    </p>
+    <p>
+      One opt-in exception: if you enable the <em>"Keep empty tab groups in place"</em> setting,
+      the extension opens a static placeholder page from this website (GitHub Pages) in a regular
+      browser tab. The tab-group name is carried only in the URL fragment (<code>#group=…</code>),
+      which browsers never send to the server; the page itself sets no cookies and runs no
+      analytics (see section 6).
     </p>
 
     <h2>3. Data stored locally</h2>

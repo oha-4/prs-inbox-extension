@@ -1,0 +1,59 @@
+---
+import '../styles/global.css';
+
+// 拡張の keepEmptyGroups 設定が開くプレースホルダタブ用の最小ページ（ナビ/フッタなし）。
+// グループ名は URL フラグメント（#group=...）で受け取り、サーバーには送信されない。
+// URL は拡張側の src/lib/placeholder.ts（PLACEHOLDER_URL_BASE）と一致させること。
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const favicon = `${base}/favicon.png`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href={favicon} />
+    <title>Inbox Zero 🎉</title>
+  </head>
+  <body class="flex min-h-screen items-center justify-center p-6">
+    <main class="bg-card rise w-full max-w-sm rounded-xl border p-8 text-center">
+      <p class="m-0 text-5xl" aria-hidden="true">🎉</p>
+      <h1 id="msg" class="font-display mt-4 text-xl font-bold tracking-tight">Inbox Zero</h1>
+      <p id="sub" class="text-muted-foreground mt-2 text-sm leading-relaxed"></p>
+      <a
+        href="https://github.com/pulls"
+        rel="noopener"
+        class="text-signal mt-6 inline-block font-mono text-xs underline underline-offset-4 hover:opacity-80"
+      >
+        github.com/pulls
+      </a>
+    </main>
+    <script is:inline>
+      // フラグメントはユーザー由来の文字列 — 必ず textContent で描画する（innerHTML 禁止）
+      (() => {
+        const ja = (navigator.language || '').toLowerCase().startsWith('ja');
+        document.documentElement.lang = ja ? 'ja' : 'en';
+        const msg = document.getElementById('msg');
+        const sub = document.getElementById('sub');
+        const render = () => {
+          const group = new URLSearchParams(location.hash.slice(1)).get('group');
+          document.title = group ? `Inbox Zero 🎉 — ${group}` : 'Inbox Zero 🎉';
+          if (group) {
+            msg.textContent = ja
+              ? `${group} に該当するPRはありません 🎉`
+              : `No PRs match — ${group} 🎉`;
+          } else {
+            msg.textContent = ja ? 'Inboxは空です 🎉' : 'Your inbox is empty 🎉';
+          }
+          sub.textContent = ja
+            ? 'このタブは、タブグループの位置を保つためのプレースホルダです。'
+            : 'This tab is a placeholder that keeps your tab group in place.';
+        };
+        render();
+        addEventListener('hashchange', render);
+      })();
+    </script>
+  </body>
+</html>

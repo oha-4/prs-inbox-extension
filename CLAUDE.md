@@ -79,6 +79,8 @@ Accept: application/json        (cookie auth, credentials: 'include')
 - `diff.ts` — `computeTabSyncPlan()` (normal, ownership-respecting) and
   `forceExtraCloses()` (force-align). **Tab-manipulation lives in the worker; the
   decision logic is pure and tested here.**
+- `placeholder.ts` — placeholder-tab URL/key helpers for `keepEmptyGroups`
+  (`tabKey()` = PR key or placeholder key; used by diff + tabSync matching).
 - `prUrl.ts` · `time.ts` · `settings.ts` (defaults + `mergeSettings` schema-merge).
 
 ### Tab sync (`src/background/tabSync.ts`)
@@ -96,6 +98,16 @@ Accept: application/json        (cookie auth, credentials: 'include')
 - Synced tabs are created `active:false` and **left to load** (no `discard`) so
   the tab title shows the real PR title; Chrome auto-discards under memory
   pressure. Caveat: background loading may mark a PR as read on GitHub.
+- **`keepEmptyGroups`** (opt-in, default off): when an enabled group's PR set is
+  empty, one placeholder tab pointing at the GitHub Pages "Inbox Zero" page
+  (`site/src/pages/inbox-zero.astro`, group name in the URL **hash** — never
+  sent to the server) keeps the group alive so its position survives. Remote URL
+  on purpose: extension reload force-closes `chrome-extension://` tabs. Invariant
+  both modes rely on: **creates/moves run before closes** so a group's tab count
+  never hits zero mid-sync (an empty group is deleted by Chrome and would be
+  recreated at the end of the tab strip). Placeholders are always closed when no
+  longer desired, regardless of `autoCloseRemoved`, and are skipped when other
+  tabs (released PRs, user tabs) already keep the group alive.
 
 ## Conventions
 

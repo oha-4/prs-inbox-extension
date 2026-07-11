@@ -79,4 +79,10 @@ describe('mergeSettings', () => {
     expect(defaultSettings().forceAlignOnRefresh).toBe(false);
     expect(mergeSettings({ forceAlignOnRefresh: true }).forceAlignOnRefresh).toBe(true);
   });
+
+  it('defaults keepEmptyGroups off and respects the stored value', () => {
+    expect(defaultSettings().keepEmptyGroups).toBe(false);
+    expect(mergeSettings({ keepEmptyGroups: true }).keepEmptyGroups).toBe(true);
+    expect(mergeSettings({ keepEmptyGroups: 'yes' }).keepEmptyGroups).toBe(false);
+  });
 });

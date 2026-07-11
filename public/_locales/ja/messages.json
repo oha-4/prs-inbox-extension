@@ -35,6 +35,10 @@
   "badgeIncludeTeamLabel": { "message": "件数に「チームのレビュー」も含める" },
   "forceAlignOnRefreshLabel": { "message": "更新のたびにタブグループを強制整列する" },
   "forceAlignNow": { "message": "今すぐ強制整列" },
+  "keepEmptyGroupsLabel": { "message": "PRが無くなってもタブグループの位置を維持する" },
+  "keepEmptyGroupsHint": {
+    "message": "グループが空になると、Inbox Zeroページ（この拡張機能のWebサイト）をプレースホルダータブとして開き、グループの位置を保ちます。"
+  },
   "sortHeader": { "message": "グループ内の並び順" },
   "sortHint": { "message": "各グループ内のタブの並び順（最大2段）" },
   "sortAddLevel": { "message": "条件を追加" },

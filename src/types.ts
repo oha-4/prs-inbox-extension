@@ -81,6 +81,8 @@ export interface Settings {
   sortCriteria: SortCriterion[];
   /** 更新時にタブグループを強制整列するか（既定: 通常同期） */
   forceAlignOnRefresh: boolean;
+  /** PRが0件になった有効グループをプレースホルダタブ（Inbox Zeroページ）で維持し、位置を保つか（既定: off） */
+  keepEmptyGroups: boolean;
   sections: Record<SectionId, SectionSyncConfig>;
   /** 'owner' または 'owner/repo'。空なら全許可 */
   allowlist: string[];

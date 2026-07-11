@@ -5,6 +5,7 @@ import {
   type DesiredTab,
   type ExistingTabInfo,
 } from '../src/lib/diff';
+import { makePlaceholderUrl, placeholderPrId } from '../src/lib/placeholder';
 import type { OwnedTab } from '../src/types';
 
 function desired(prId: string, opts: Partial<DesiredTab> = {}): DesiredTab {
@@ -22,6 +23,24 @@ function owned(prId: string, tabId: number, groupName = 'Needs review'): OwnedTa
     prId,
     tabId,
     prUrl: `https://github.com/acme/widgets/pull/${prId}`,
+    groupName,
+  };
+}
+
+function placeholderDesired(groupName = 'Needs review'): DesiredTab {
+  return {
+    prId: placeholderPrId(groupName),
+    url: makePlaceholderUrl(groupName),
+    groupName,
+    groupColor: 'yellow',
+  };
+}
+
+function ownedPlaceholder(tabId: number, groupName = 'Needs review'): OwnedTab {
+  return {
+    prId: placeholderPrId(groupName),
+    tabId,
+    prUrl: makePlaceholderUrl(groupName),
     groupName,
   };
 }
@@ -156,6 +175,132 @@ describe('computeTabSyncPlan', () => {
   });
 });
 
+describe('computeTabSyncPlan (placeholders)', () => {
+  it('creates the placeholder when all remaining owned tabs are closing (autoClose on)', () => {
+    const plan = computeTabSyncPlan({
+      desired: [placeholderDesired()],
+      ownedTabs: [owned('1', 10)],
+      existingTabs: [{ tabId: 10, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 }],
+      groupIdByName: { 'Needs review': 5 },
+      autoClose: true,
+    });
+    expect(plan.toClose).toEqual([10]);
+    expect(plan.toCreate.map((d) => d.prId)).toEqual([placeholderPrId('Needs review')]);
+  });
+
+  it('skips the placeholder when a released tab keeps the group alive (autoClose off)', () => {
+    const plan = computeTabSyncPlan({
+      desired: [placeholderDesired()],
+      ownedTabs: [owned('1', 10)],
+      existingTabs: [{ tabId: 10, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 }],
+      groupIdByName: { 'Needs review': 5 },
+      autoClose: false,
+    });
+    expect(plan.toRelease).toEqual(['1']);
+    expect(plan.toCreate).toEqual([]);
+  });
+
+  it("skips the placeholder when a user's arbitrary tab sits in the group", () => {
+    const plan = computeTabSyncPlan({
+      desired: [placeholderDesired()],
+      ownedTabs: [],
+      existingTabs: [{ tabId: 30, url: 'https://example.com/', groupId: 5 }],
+      groupIdByName: { 'Needs review': 5 },
+      autoClose: true,
+    });
+    expect(plan.toCreate).toEqual([]);
+    expect(plan.toClose).toEqual([]);
+  });
+
+  it('creates the placeholder when the group does not exist yet', () => {
+    const plan = computeTabSyncPlan({
+      desired: [placeholderDesired()],
+      ownedTabs: [],
+      existingTabs: NO_TABS,
+      groupIdByName: {},
+      autoClose: true,
+    });
+    expect(plan.toCreate.map((d) => d.prId)).toEqual([placeholderPrId('Needs review')]);
+  });
+
+  it('keeps an owned placeholder while the group stays empty', () => {
+    const plan = computeTabSyncPlan({
+      desired: [placeholderDesired()],
+      ownedTabs: [ownedPlaceholder(90)],
+      existingTabs: [{ tabId: 90, url: makePlaceholderUrl('Needs review'), groupId: 5 }],
+      groupIdByName: { 'Needs review': 5 },
+      autoClose: true,
+    });
+    expect(plan.keptOwned).toHaveLength(1);
+    expect(plan.toCreate).toEqual([]);
+    expect(plan.toClose).toEqual([]);
+  });
+
+  it('adopts an unowned placeholder tab already in the target group (browser restart)', () => {
+    const plan = computeTabSyncPlan({
+      desired: [placeholderDesired()],
+      ownedTabs: [],
+      existingTabs: [{ tabId: 40, url: makePlaceholderUrl('Needs review'), groupId: 5 }],
+      groupIdByName: { 'Needs review': 5 },
+      autoClose: true,
+    });
+    expect(plan.toAdopt.map((o) => o.tabId)).toEqual([40]);
+    expect(plan.toCreate).toEqual([]);
+  });
+
+  it('closes the owned placeholder when PRs return, even with autoClose off', () => {
+    const plan = computeTabSyncPlan({
+      desired: [desired('1')],
+      ownedTabs: [ownedPlaceholder(90)],
+      existingTabs: [{ tabId: 90, url: makePlaceholderUrl('Needs review'), groupId: 5 }],
+      groupIdByName: { 'Needs review': 5 },
+      autoClose: false,
+    });
+    expect(plan.toClose).toEqual([90]);
+    expect(plan.toRelease).toEqual([]);
+    expect(plan.toCreate.map((d) => d.prId)).toEqual(['1']);
+  });
+
+  it('closes the owned placeholder when the setting is turned off (no longer desired)', () => {
+    const plan = computeTabSyncPlan({
+      desired: [],
+      ownedTabs: [ownedPlaceholder(90)],
+      existingTabs: [{ tabId: 90, url: makePlaceholderUrl('Needs review'), groupId: 5 }],
+      groupIdByName: { 'Needs review': 5 },
+      autoClose: false,
+    });
+    expect(plan.toClose).toEqual([90]);
+    expect(plan.toRelease).toEqual([]);
+  });
+
+  it('leaves alone a placeholder tab outside the target group (no duplicate)', () => {
+    const plan = computeTabSyncPlan({
+      desired: [placeholderDesired()],
+      ownedTabs: [],
+      existingTabs: [{ tabId: 40, url: makePlaceholderUrl('Needs review'), groupId: -1 }],
+      groupIdByName: { 'Needs review': 5 },
+      autoClose: true,
+    });
+    expect(plan.toAdopt).toEqual([]);
+    expect(plan.toCreate).toEqual([]);
+  });
+
+  it('creates the placeholder for a group vacated by a move to another group', () => {
+    const plan = computeTabSyncPlan({
+      desired: [
+        desired('1', { groupName: 'New Group', groupColor: 'blue' }),
+        placeholderDesired('Needs review'),
+      ],
+      ownedTabs: [owned('1', 10)],
+      existingTabs: [{ tabId: 10, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 }],
+      groupIdByName: { 'Needs review': 5 },
+      autoClose: true,
+    });
+    expect(plan.toMove.map((m) => m.tabId)).toEqual([10]);
+    expect(plan.toCreate.map((d) => d.prId)).toEqual([placeholderPrId('Needs review')]);
+  });
+});
+
 describe('forceExtraCloses', () => {
   const managed = (tabId: number, url: string, groupName = 'Needs review') => ({
     tabId,
@@ -187,6 +332,22 @@ describe('forceExtraCloses', () => {
     const closes = forceExtraCloses(
       [managed(1, 'https://github.com/acme/widgets/pull/1', 'Other group')],
       [{ ...desired('1'), groupName: 'G' }],
+    );
+    expect(closes).toEqual([1]);
+  });
+
+  it('keeps a desired placeholder tab', () => {
+    const closes = forceExtraCloses(
+      [managed(1, makePlaceholderUrl('Needs review'))],
+      [placeholderDesired()],
+    );
+    expect(closes).toEqual([]);
+  });
+
+  it('closes a placeholder in a group that no longer desires it', () => {
+    const closes = forceExtraCloses(
+      [managed(1, makePlaceholderUrl('Needs review'))],
+      [desired('1')],
     );
     expect(closes).toEqual([1]);
   });

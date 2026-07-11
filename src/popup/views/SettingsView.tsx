@@ -145,6 +145,18 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
           />
           {t('forceAlignOnRefreshLabel')}
         </label>
+        <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+          <Switch
+            checked={settings.keepEmptyGroups}
+            onCheckedChange={(checked) => update((s) => ({ ...s, keepEmptyGroups: checked }))}
+          />
+          {t('keepEmptyGroupsLabel')}
+        </label>
+        {settings.keepEmptyGroups && (
+          <p className="text-muted-foreground animate-in fade-in m-0 pl-7 text-[11px] duration-200">
+            {t('keepEmptyGroupsHint')}
+          </p>
+        )}
         <ForceAlignButton />
       </section>
 

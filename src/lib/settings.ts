@@ -41,6 +41,7 @@ export function defaultSettings(): Settings {
     badgeIncludeTeamReview: false,
     sortCriteria: DEFAULT_SORT.map((c) => ({ ...c })),
     forceAlignOnRefresh: false,
+    keepEmptyGroups: false,
     sections,
     allowlist: [],
     blocklist: [],
@@ -67,6 +68,7 @@ export function mergeSettings(stored: unknown): Settings {
     ...(typeof s.forceAlignOnRefresh === 'boolean'
       ? { forceAlignOnRefresh: s.forceAlignOnRefresh }
       : {}),
+    ...(typeof s.keepEmptyGroups === 'boolean' ? { keepEmptyGroups: s.keepEmptyGroups } : {}),
     ...(Array.isArray(s.sortCriteria) ? { sortCriteria: sanitizeSort(s.sortCriteria) } : {}),
     ...(Array.isArray(s.allowlist) ? { allowlist: s.allowlist.filter(isNonEmptyString) } : {}),
     ...(Array.isArray(s.blocklist) ? { blocklist: s.blocklist.filter(isNonEmptyString) } : {}),

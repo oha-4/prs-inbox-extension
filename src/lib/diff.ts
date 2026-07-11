@@ -1,5 +1,5 @@
 import type { OwnedTab, TabGroupColor } from '../types';
-import { prUrlKey } from './prUrl';
+import { isPlaceholderId, placeholderKey, tabKey } from './placeholder';
 
 export interface DesiredTab {
   prId: string;
@@ -45,6 +45,11 @@ export interface TabSyncPlan {
  * 不変条件:
  * - 拡張が所有していないタブは絶対に閉じない
  * - 既存のPRタブがターゲットグループの外にある場合は一切触らない（重複作成もしない）
+ *
+ * プレースホルダ（keepEmptyGroups）: desired にプレースホルダURLが混ざる。
+ * 所有プレースホルダが不要になったら autoClose に関係なく常に閉じる
+ * （ユーザーのPRタブではないので release すると永久に残る）。作成は
+ * 「グループにタブが残らない場合」のみ（released タブ等が生かすなら不要）。
  */
 export function computeTabSyncPlan(input: {
   desired: DesiredTab[];
@@ -71,7 +76,22 @@ export function computeTabSyncPlan(input: {
     keptOwned: [],
   };
 
+  // ---- 1. 所有しているが desired にないタブ ----
+  // プレースホルダの作成判定（パス3）が toClose/toMove を参照するため先に確定させる。
+  for (const owned of input.ownedTabs) {
+    if (desiredByPr.has(owned.prId)) continue;
+    if (isPlaceholderId(owned.prId)) plan.toClose.push(owned.tabId);
+    else if (input.autoClose) plan.toClose.push(owned.tabId);
+    else plan.toRelease.push(owned.prId);
+  }
+
+  // ---- 2. PR の desired ----
+  const placeholders: DesiredTab[] = [];
   for (const d of desiredByPr.values()) {
+    if (placeholderKey(d.url) !== null) {
+      placeholders.push(d);
+      continue;
+    }
     const owned = ownedByPr.get(d.prId);
     if (owned) {
       if (owned.groupName !== d.groupName) {
@@ -88,9 +108,9 @@ export function computeTabSyncPlan(input: {
       continue;
     }
 
-    const key = prUrlKey(d.url);
+    const key = tabKey(d.url);
     const candidates = input.existingTabs.filter(
-      (t) => !ownedTabIds.has(t.tabId) && key !== null && prUrlKey(t.url) === key,
+      (t) => !ownedTabIds.has(t.tabId) && key !== null && tabKey(t.url) === key,
     );
     if (candidates.length > 0) {
       const targetGroupId = input.groupIdByName[d.groupName];
@@ -113,10 +133,38 @@ export function computeTabSyncPlan(input: {
     plan.toCreate.push(d);
   }
 
-  for (const owned of input.ownedTabs) {
-    if (desiredByPr.has(owned.prId)) continue;
-    if (input.autoClose) plan.toClose.push(owned.tabId);
-    else plan.toRelease.push(owned.prId);
+  // ---- 3. プレースホルダの desired ----
+  // 閉じる/他グループへ移る予定のタブを除いてグループにタブが残るなら、
+  // グループは消滅しないのでプレースホルダは作らない。
+  const leaving = new Set<number>([...plan.toClose, ...plan.toMove.map((m) => m.tabId)]);
+  for (const d of placeholders) {
+    const owned = ownedByPr.get(d.prId);
+    if (owned) {
+      // prId にグループ名が埋まっているので move は発生しない
+      plan.keptOwned.push(owned);
+      continue;
+    }
+    const key = placeholderKey(d.url);
+    const targetGroupId = input.groupIdByName[d.groupName];
+    const candidates = input.existingTabs.filter(
+      (t) => !ownedTabIds.has(t.tabId) && key !== null && tabKey(t.url) === key,
+    );
+    const inTargetGroup =
+      targetGroupId !== undefined ? candidates.find((t) => t.groupId === targetGroupId) : undefined;
+    if (inTargetGroup) {
+      plan.toAdopt.push({
+        tabId: inTargetGroup.tabId,
+        prId: d.prId,
+        prUrl: d.url,
+        groupName: d.groupName,
+      });
+      continue;
+    }
+    if (candidates.length > 0) continue; // グループ外のプレースホルダは触らない
+    const groupStillPopulated =
+      targetGroupId !== undefined &&
+      input.existingTabs.some((t) => t.groupId === targetGroupId && !leaving.has(t.tabId));
+    if (!groupStillPopulated) plan.toCreate.push(d);
   }
 
   return plan;
@@ -133,7 +181,7 @@ export function forceExtraCloses(
 ): number[] {
   const desiredKeysByGroup = new Map<string, Set<string>>();
   for (const d of desired) {
-    const key = prUrlKey(d.url);
+    const key = tabKey(d.url);
     if (!key) continue;
     let set = desiredKeysByGroup.get(d.groupName);
     if (!set) {
@@ -144,7 +192,7 @@ export function forceExtraCloses(
   }
   const close: number[] = [];
   for (const t of managedTabs) {
-    const key = prUrlKey(t.url);
+    const key = tabKey(t.url);
     const set = desiredKeysByGroup.get(t.groupName);
     if (!key || !set?.has(key)) close.push(t.tabId);
   }
