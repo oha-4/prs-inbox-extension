@@ -37,6 +37,14 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === POLL_ALARM) poll();
 });
 
+chrome.commands.onCommand.addListener((command) => {
+  if (command !== 'sync-now') return;
+  // REFRESH と同じデバウンス窓に収める（poll() が lastPollStartedAt を更新）。
+  // runPoll は実行中なら自前でスキップするので追加の直列化は不要。
+  if (Date.now() - lastPollStartedAt < MANUAL_REFRESH_DEBOUNCE_MS) return;
+  poll();
+});
+
 /**
  * 非同期ハンドラの promise を必ず sendResponse で締める。
  * reject を握り潰して `{ ok: false, error }` を返すことで、popup 側の

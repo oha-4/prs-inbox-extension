@@ -16,6 +16,7 @@ Zen Browserの「Live Folder」風に、GitHubの [PR Inbox](https://github.com/
 - **フィルタ**: `owner` / `owner/repo` 単位の包含・除外リスト（ポップアップ表示とタブ同期の両方に適用）
 - **バッジ**: 「Needs your review」の件数をツールバーアイコンに表示
 - **多言語対応**: 日本語・英語（`chrome.i18n`、ブラウザのUI言語に追従。リソースは `public/_locales/`）
+- **キーボードショートカット**: ポップアップを開く／タブ同期を今すぐ実行する2つのコマンドを用意。キーは既定で未割り当てなので、`chrome://extensions/shortcuts` から任意のキーを割り当てて使う
 
 UIは React + Tailwind CSS v4 + [shadcn/ui](https://ui.shadcn.com/)（`src/components/ui/`）+ [lucide](https://lucide.dev/) アイコンで構築。ライト/ダークテーマはブラウザ設定に自動追従する。
 

@@ -28,4 +28,12 @@ export default defineManifest({
   },
   permissions: ['tabs', 'tabGroups', 'alarms', 'storage'],
   host_permissions: ['https://github.com/*'],
+  // ショートカットは既定で未割り当て（suggested_key なし）。ユーザーが
+  // chrome://extensions/shortcuts で任意のキーを割り当てる。
+  commands: {
+    // 予約名: ツールバーの popup を開く。Chrome が description を無視するため最小構成。
+    _execute_action: {},
+    // タブ同期を即時実行。description は i18n 参照。
+    'sync-now': { description: '__MSG_cmdSyncNow__' },
+  },
 });
