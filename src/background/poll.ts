@@ -103,12 +103,20 @@ export async function runPoll(): Promise<void> {
   }
 }
 
-/** 設定変更時: 再フェッチせずキャッシュからバッジ・タブ同期だけ再計算 */
-export async function applySettingsChange(): Promise<void> {
+/**
+ * 設定変更時: 再フェッチせずキャッシュからバッジ・タブ同期だけ再計算。
+ * targets で対象を絞れる（既定は両方＝後方互換）。関係ない設定変更で
+ * 高コストな syncTabs（全タブ列挙・検証・並べ替え）を走らせないため。
+ */
+export async function applySettingsChange(
+  targets: { badge: boolean; tabSync: boolean } = { badge: true, tabSync: true },
+): Promise<void> {
   const settings = await loadSettings();
-  const snapshot = await loadSnapshot();
-  await updateBadge(snapshot, settings);
-  await syncTabs();
+  if (targets.badge) {
+    const snapshot = await loadSnapshot();
+    await updateBadge(snapshot, settings);
+  }
+  if (targets.tabSync) await syncTabs();
 }
 
 /** デバッグ: 全既知セクション + カスタムセクション の生レスポンスを storage.local に保存 */
