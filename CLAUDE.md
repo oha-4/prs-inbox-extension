@@ -42,10 +42,11 @@ Accept: application/json        (cookie auth, credentials: 'include')
 - Response shape: `payload.pullsInboxSurfaceContentRoute.{results[], pageInfo, error}`.
   Parsed defensively in `src/lib/github/parseInbox.ts` (falls back to scanning
   `payload` for any `*Route` with `results[]` if the key is renamed).
-- `filter` slugs (one request per enabled section): `review-requested`,
+- `filter` slugs (one request per known section): `review-requested`,
   `team-review-requested`, `needs-action`, `waiting-for-review`, `your-drafts`,
   `ready-to-merge`, `merge-queue`. Non-slug values are interpreted as GitHub
-  search syntax (unused for now).
+  search syntax — this is how **custom sections** work (user-written queries in
+  settings, fetched alongside the known sections).
 - Logged-out signal: 404 JSON `{"error":"Couldn't authenticate you"}` or a
   redirect to `/login`. Rate limit: 429 → honor `Retry-After`.
 - It can break without notice. On parse failure the popup keeps the last cache +
@@ -76,23 +77,40 @@ Accept: application/json        (cookie auth, credentials: 'include')
 - `filters.ts` — owner/`owner/repo` allow/block list (applied centrally so popup
   and tab sync see identical data).
 - `sortPrs.ts` — up to 2-level in-group sort (repo / created / updated, asc/desc).
+- `buildDesired.ts` — snapshot × settings → desired tabs per group. Dedupes PRs
+  **within** a group (across its member sections); the same PR in two groups
+  yields two entries (one tab per group, by design). Merges sections in the
+  group's `sectionIds` order; with no `sortCriteria` that merge order **is** the
+  tab order (sortPrs is skipped — its PR-number tiebreak would reorder).
 - `diff.ts` — `computeTabSyncPlan()` (normal, ownership-respecting) and
-  `forceExtraCloses()` (force-align). **Tab-manipulation lives in the worker; the
+  `forceExtraCloses()` (force-align). Identity is the composite key
+  `(groupId, prId)`; adoption is scoped to the group's own chrome group with a
+  claim set; a stale owned tab is paired with a same-PR create and converted to
+  a move (avoids tab reloads). **Tab-manipulation lives in the worker; the
   decision logic is pure and tested here.**
 - `placeholder.ts` — placeholder-tab URL/key helpers for `keepEmptyGroups`
   (`tabKey()` = PR key or placeholder key; used by diff + tabSync matching).
-- `prUrl.ts` · `time.ts` · `settings.ts` (defaults + `mergeSettings` schema-merge).
+- `prUrl.ts` · `time.ts` · `settings.ts` (defaults + `mergeSettings` schema-merge,
+  `SyncGroup`/`CustomSection` sanitizers, `pollTargets`/`listSections`/
+  `sectionOrderIndex`/`activeSyncGroups` helpers).
 
 ### Tab sync (`src/background/tabSync.ts`)
 
-- Builds the desired set (enabled sections × filters, deduped by section
-  priority, then sorted), validates group ids and owned tabs, applies the diff,
-  and reorders tabs within each group.
+- Settings are **group-first**: the user creates named sync groups
+  (`Settings.syncGroups`, stable ids) and assigns sections (known sections +
+  custom sections) to each; the same section may feed several groups. A section
+  syncs iff it belongs to ≥1 active group.
+- Builds the desired set via `buildDesired()` (active groups × filters, deduped
+  per group, sorted), resolves settings groups → chrome groups (`SyncState.groups`
+  maps group id → `{chromeGroupId, title}`), validates owned tabs, applies the
+  diff, and reorders tabs within each group. Chrome group **color is never set**
+  — Chrome assigns one and the user's manual recolor sticks.
 - **Normal** mode respects the user: never closes a tab it doesn't own; releases
-  ownership when the user navigates a tab away or moves it out of the group
-  (renaming a managed group also releases it — by design). New groups are
-  created in the window of an existing managed group when there is one
-  (last-focused window otherwise).
+  ownership when the user navigates a tab away or moves it out of the group.
+  Renaming a group **in settings** retitles the chrome group in place (the
+  stored last-set title disambiguates); renaming the chrome group **by hand**
+  releases it — by design. New groups are created in the window of an existing
+  managed group when there is one (last-focused window otherwise).
 - **Force-align** (button / `forceAlignOnRefresh`) reconciles managed groups to
   exactly the desired set, ignoring user-added/removed tabs.
 - Synced tabs are created `active:false` and **left to load** (no `discard`) so
@@ -100,8 +118,9 @@ Accept: application/json        (cookie auth, credentials: 'include')
   pressure. Caveat: background loading may mark a PR as read on GitHub.
 - **`keepEmptyGroups`** (opt-in, default off): when an enabled group's PR set is
   empty, one placeholder tab pointing at the GitHub Pages "Inbox Zero" page
-  (`site/src/pages/inbox-zero.astro`, group name in the URL **hash** — never
-  sent to the server) keeps the group alive so its position survives. Remote URL
+  (`site/src/pages/inbox-zero.astro`, group id + display name in the URL
+  **hash** as `#gid=…&group=…` — never sent to the server) keeps the group
+  alive so its position survives. Remote URL
   on purpose: extension reload force-closes `chrome-extension://` tabs. Invariant
   both modes rely on: **creates/moves run before closes** so a group's tab count
   never hits zero mid-sync (an empty group is deleted by Chrome and would be

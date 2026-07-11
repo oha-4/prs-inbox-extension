@@ -12,36 +12,36 @@ function desired(prId: string, opts: Partial<DesiredTab> = {}): DesiredTab {
   return {
     prId,
     url: `https://github.com/acme/widgets/pull/${prId}`,
-    groupName: 'Needs review',
-    groupColor: 'yellow',
+    groupId: 'g1',
+    groupTitle: 'Needs review',
     ...opts,
   };
 }
 
-function owned(prId: string, tabId: number, groupName = 'Needs review'): OwnedTab {
+function owned(prId: string, tabId: number, groupId = 'g1'): OwnedTab {
   return {
     prId,
     tabId,
     prUrl: `https://github.com/acme/widgets/pull/${prId}`,
-    groupName,
+    groupId,
   };
 }
 
-function placeholderDesired(groupName = 'Needs review'): DesiredTab {
+function placeholderDesired(groupId = 'g1', groupTitle = 'Needs review'): DesiredTab {
   return {
-    prId: placeholderPrId(groupName),
-    url: makePlaceholderUrl(groupName),
-    groupName,
-    groupColor: 'yellow',
+    prId: placeholderPrId(groupId),
+    url: makePlaceholderUrl(groupId, groupTitle),
+    groupId,
+    groupTitle,
   };
 }
 
-function ownedPlaceholder(tabId: number, groupName = 'Needs review'): OwnedTab {
+function ownedPlaceholder(tabId: number, groupId = 'g1', groupTitle = 'Needs review'): OwnedTab {
   return {
-    prId: placeholderPrId(groupName),
+    prId: placeholderPrId(groupId),
     tabId,
-    prUrl: makePlaceholderUrl(groupName),
-    groupName,
+    prUrl: makePlaceholderUrl(groupId, groupTitle),
+    groupId,
   };
 }
 
@@ -53,7 +53,7 @@ describe('computeTabSyncPlan', () => {
       desired: [desired('1'), desired('2')],
       ownedTabs: [],
       existingTabs: NO_TABS,
-      groupIdByName: {},
+      chromeGroupIdByGroup: {},
       autoClose: true,
     });
     expect(plan.toCreate.map((d) => d.prId)).toEqual(['1', '2']);
@@ -65,7 +65,7 @@ describe('computeTabSyncPlan', () => {
       desired: [desired('1')],
       ownedTabs: [owned('1', 10)],
       existingTabs: [{ tabId: 10, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 }],
-      groupIdByName: { 'Needs review': 5 },
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: true,
     });
     expect(plan.toCreate).toEqual([]);
@@ -78,7 +78,7 @@ describe('computeTabSyncPlan', () => {
       desired: [],
       ownedTabs: [owned('1', 10)],
       existingTabs: NO_TABS,
-      groupIdByName: {},
+      chromeGroupIdByGroup: {},
       autoClose: true,
     });
     expect(plan.toClose).toEqual([10]);
@@ -90,11 +90,11 @@ describe('computeTabSyncPlan', () => {
       desired: [],
       ownedTabs: [owned('1', 10)],
       existingTabs: NO_TABS,
-      groupIdByName: {},
+      chromeGroupIdByGroup: {},
       autoClose: false,
     });
     expect(plan.toClose).toEqual([]);
-    expect(plan.toRelease).toEqual(['1']);
+    expect(plan.toRelease).toEqual([{ groupId: 'g1', prId: '1' }]);
   });
 
   it('adopts an unowned tab already sitting in the target group', () => {
@@ -104,7 +104,7 @@ describe('computeTabSyncPlan', () => {
       existingTabs: [
         { tabId: 20, url: 'https://github.com/acme/widgets/pull/1/files', groupId: 5 },
       ],
-      groupIdByName: { 'Needs review': 5 },
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: true,
     });
     expect(plan.toAdopt).toHaveLength(1);
@@ -112,12 +112,12 @@ describe('computeTabSyncPlan', () => {
     expect(plan.toCreate).toEqual([]);
   });
 
-  it('leaves alone an existing PR tab outside the target group (no duplicate)', () => {
+  it('leaves alone an existing PR tab outside all managed groups (no duplicate)', () => {
     const plan = computeTabSyncPlan({
       desired: [desired('1')],
       ownedTabs: [],
       existingTabs: [{ tabId: 20, url: 'https://github.com/acme/widgets/pull/1', groupId: -1 }],
-      groupIdByName: { 'Needs review': 5 },
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: true,
     });
     expect(plan.toCreate).toEqual([]);
@@ -130,37 +130,114 @@ describe('computeTabSyncPlan', () => {
       desired: [desired('1')],
       ownedTabs: [],
       existingTabs: [{ tabId: 20, url: 'https://github.com/acme/widgets/pull/1', groupId: 99 }],
-      groupIdByName: {},
+      chromeGroupIdByGroup: {},
       autoClose: true,
     });
     expect(plan.toCreate).toEqual([]);
     expect(plan.toAdopt).toEqual([]);
   });
 
-  it('dedupes a PR appearing in two sections mapped to the same plan (first wins)', () => {
+  it('creates one tab per group when the same PR is desired in two groups', () => {
     const plan = computeTabSyncPlan({
-      desired: [desired('1', { groupName: 'Group A' }), desired('1', { groupName: 'Group B' })],
+      desired: [desired('1', { groupId: 'gA' }), desired('1', { groupId: 'gB' })],
       ownedTabs: [],
       existingTabs: NO_TABS,
-      groupIdByName: {},
+      chromeGroupIdByGroup: {},
+      autoClose: true,
+    });
+    expect(plan.toCreate.map((d) => d.groupId).sort()).toEqual(['gA', 'gB']);
+  });
+
+  it('dedupes duplicate desired entries within the same group (defensive)', () => {
+    const plan = computeTabSyncPlan({
+      desired: [desired('1'), desired('1')],
+      ownedTabs: [],
+      existingTabs: NO_TABS,
+      chromeGroupIdByGroup: {},
       autoClose: true,
     });
     expect(plan.toCreate).toHaveLength(1);
-    expect(plan.toCreate[0]!.groupName).toBe('Group A');
   });
 
-  it('moves an owned tab when its section is remapped to another group', () => {
+  it('moves an owned tab when its PR is remapped to another group (autoClose on)', () => {
     const plan = computeTabSyncPlan({
-      desired: [desired('1', { groupName: 'New Group', groupColor: 'blue' })],
-      ownedTabs: [owned('1', 10, 'Old Group')],
+      desired: [desired('1', { groupId: 'gNew', groupTitle: 'New Group' })],
+      ownedTabs: [owned('1', 10, 'gOld')],
       existingTabs: NO_TABS,
-      groupIdByName: { 'Old Group': 5 },
+      chromeGroupIdByGroup: { gOld: 5 },
       autoClose: true,
     });
     expect(plan.toMove).toHaveLength(1);
-    expect(plan.toMove[0]).toMatchObject({ tabId: 10, groupName: 'New Group' });
+    expect(plan.toMove[0]).toMatchObject({ tabId: 10, groupId: 'gNew', groupTitle: 'New Group' });
     expect(plan.toCreate).toEqual([]);
     expect(plan.toClose).toEqual([]);
+  });
+
+  it('move pairing consumes the release when autoClose is off', () => {
+    const plan = computeTabSyncPlan({
+      desired: [desired('1', { groupId: 'gNew', groupTitle: 'New Group' })],
+      ownedTabs: [owned('1', 10, 'gOld')],
+      existingTabs: NO_TABS,
+      chromeGroupIdByGroup: { gOld: 5 },
+      autoClose: false,
+    });
+    expect(plan.toMove.map((m) => m.tabId)).toEqual([10]);
+    expect(plan.toRelease).toEqual([]);
+    expect(plan.toCreate).toEqual([]);
+  });
+
+  it('pairs only one create with a single stale tab when the PR enters two groups', () => {
+    const plan = computeTabSyncPlan({
+      desired: [desired('1', { groupId: 'gA' }), desired('1', { groupId: 'gB' })],
+      ownedTabs: [owned('1', 10, 'gOld')],
+      existingTabs: NO_TABS,
+      chromeGroupIdByGroup: { gOld: 5 },
+      autoClose: true,
+    });
+    expect(plan.toMove).toHaveLength(1);
+    expect(plan.toCreate).toHaveLength(1);
+    expect(plan.toClose).toEqual([]);
+    const touchedGroups = [
+      ...plan.toMove.map((m) => m.groupId),
+      ...plan.toCreate.map((d) => d.groupId),
+    ];
+    expect(touchedGroups.sort()).toEqual(['gA', 'gB']);
+  });
+
+  it('claims an adoptable tab for the group that physically contains it; the other creates', () => {
+    const plan = computeTabSyncPlan({
+      desired: [desired('1', { groupId: 'gA' }), desired('1', { groupId: 'gB' })],
+      ownedTabs: [],
+      existingTabs: [{ tabId: 20, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 }],
+      chromeGroupIdByGroup: { gA: 5, gB: 6 },
+      autoClose: true,
+    });
+    expect(plan.toAdopt.map((o) => o.groupId)).toEqual(['gA']);
+    expect(plan.toCreate.map((d) => d.groupId)).toEqual(['gB']);
+  });
+
+  it('a tab in another managed group does not block creation', () => {
+    const plan = computeTabSyncPlan({
+      desired: [desired('1', { groupId: 'gB' })],
+      ownedTabs: [],
+      existingTabs: [{ tabId: 20, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 }],
+      chromeGroupIdByGroup: { gA: 5, gB: 6 },
+      autoClose: true,
+    });
+    expect(plan.toCreate.map((d) => d.groupId)).toEqual(['gB']);
+    expect(plan.toAdopt).toEqual([]);
+  });
+
+  it('an unmanaged matching tab suppresses creation in every group', () => {
+    const plan = computeTabSyncPlan({
+      desired: [desired('1', { groupId: 'gA' }), desired('1', { groupId: 'gB' })],
+      ownedTabs: [],
+      existingTabs: [{ tabId: 20, url: 'https://github.com/acme/widgets/pull/1', groupId: -1 }],
+      chromeGroupIdByGroup: { gA: 5, gB: 6 },
+      autoClose: true,
+    });
+    expect(plan.toCreate).toEqual([]);
+    expect(plan.toAdopt).toEqual([]);
   });
 
   it('never closes tabs it does not own', () => {
@@ -168,7 +245,7 @@ describe('computeTabSyncPlan', () => {
       desired: [],
       ownedTabs: [],
       existingTabs: [{ tabId: 30, url: 'https://github.com/acme/widgets/pull/7', groupId: 5 }],
-      groupIdByName: { 'Needs review': 5 },
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: true,
     });
     expect(plan.toClose).toEqual([]);
@@ -181,11 +258,11 @@ describe('computeTabSyncPlan (placeholders)', () => {
       desired: [placeholderDesired()],
       ownedTabs: [owned('1', 10)],
       existingTabs: [{ tabId: 10, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 }],
-      groupIdByName: { 'Needs review': 5 },
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: true,
     });
     expect(plan.toClose).toEqual([10]);
-    expect(plan.toCreate.map((d) => d.prId)).toEqual([placeholderPrId('Needs review')]);
+    expect(plan.toCreate.map((d) => d.prId)).toEqual([placeholderPrId('g1')]);
   });
 
   it('skips the placeholder when a released tab keeps the group alive (autoClose off)', () => {
@@ -193,10 +270,10 @@ describe('computeTabSyncPlan (placeholders)', () => {
       desired: [placeholderDesired()],
       ownedTabs: [owned('1', 10)],
       existingTabs: [{ tabId: 10, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 }],
-      groupIdByName: { 'Needs review': 5 },
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: false,
     });
-    expect(plan.toRelease).toEqual(['1']);
+    expect(plan.toRelease).toEqual([{ groupId: 'g1', prId: '1' }]);
     expect(plan.toCreate).toEqual([]);
   });
 
@@ -205,7 +282,7 @@ describe('computeTabSyncPlan (placeholders)', () => {
       desired: [placeholderDesired()],
       ownedTabs: [],
       existingTabs: [{ tabId: 30, url: 'https://example.com/', groupId: 5 }],
-      groupIdByName: { 'Needs review': 5 },
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: true,
     });
     expect(plan.toCreate).toEqual([]);
@@ -217,18 +294,18 @@ describe('computeTabSyncPlan (placeholders)', () => {
       desired: [placeholderDesired()],
       ownedTabs: [],
       existingTabs: NO_TABS,
-      groupIdByName: {},
+      chromeGroupIdByGroup: {},
       autoClose: true,
     });
-    expect(plan.toCreate.map((d) => d.prId)).toEqual([placeholderPrId('Needs review')]);
+    expect(plan.toCreate.map((d) => d.prId)).toEqual([placeholderPrId('g1')]);
   });
 
   it('keeps an owned placeholder while the group stays empty', () => {
     const plan = computeTabSyncPlan({
       desired: [placeholderDesired()],
       ownedTabs: [ownedPlaceholder(90)],
-      existingTabs: [{ tabId: 90, url: makePlaceholderUrl('Needs review'), groupId: 5 }],
-      groupIdByName: { 'Needs review': 5 },
+      existingTabs: [{ tabId: 90, url: makePlaceholderUrl('g1', 'Needs review'), groupId: 5 }],
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: true,
     });
     expect(plan.keptOwned).toHaveLength(1);
@@ -240,8 +317,8 @@ describe('computeTabSyncPlan (placeholders)', () => {
     const plan = computeTabSyncPlan({
       desired: [placeholderDesired()],
       ownedTabs: [],
-      existingTabs: [{ tabId: 40, url: makePlaceholderUrl('Needs review'), groupId: 5 }],
-      groupIdByName: { 'Needs review': 5 },
+      existingTabs: [{ tabId: 40, url: makePlaceholderUrl('g1', 'Needs review'), groupId: 5 }],
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: true,
     });
     expect(plan.toAdopt.map((o) => o.tabId)).toEqual([40]);
@@ -252,8 +329,8 @@ describe('computeTabSyncPlan (placeholders)', () => {
     const plan = computeTabSyncPlan({
       desired: [desired('1')],
       ownedTabs: [ownedPlaceholder(90)],
-      existingTabs: [{ tabId: 90, url: makePlaceholderUrl('Needs review'), groupId: 5 }],
-      groupIdByName: { 'Needs review': 5 },
+      existingTabs: [{ tabId: 90, url: makePlaceholderUrl('g1', 'Needs review'), groupId: 5 }],
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: false,
     });
     expect(plan.toClose).toEqual([90]);
@@ -265,8 +342,8 @@ describe('computeTabSyncPlan (placeholders)', () => {
     const plan = computeTabSyncPlan({
       desired: [],
       ownedTabs: [ownedPlaceholder(90)],
-      existingTabs: [{ tabId: 90, url: makePlaceholderUrl('Needs review'), groupId: 5 }],
-      groupIdByName: { 'Needs review': 5 },
+      existingTabs: [{ tabId: 90, url: makePlaceholderUrl('g1', 'Needs review'), groupId: 5 }],
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: false,
     });
     expect(plan.toClose).toEqual([90]);
@@ -277,8 +354,8 @@ describe('computeTabSyncPlan (placeholders)', () => {
     const plan = computeTabSyncPlan({
       desired: [placeholderDesired()],
       ownedTabs: [],
-      existingTabs: [{ tabId: 40, url: makePlaceholderUrl('Needs review'), groupId: -1 }],
-      groupIdByName: { 'Needs review': 5 },
+      existingTabs: [{ tabId: 40, url: makePlaceholderUrl('g1', 'Needs review'), groupId: -1 }],
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: true,
     });
     expect(plan.toAdopt).toEqual([]);
@@ -288,24 +365,24 @@ describe('computeTabSyncPlan (placeholders)', () => {
   it('creates the placeholder for a group vacated by a move to another group', () => {
     const plan = computeTabSyncPlan({
       desired: [
-        desired('1', { groupName: 'New Group', groupColor: 'blue' }),
-        placeholderDesired('Needs review'),
+        desired('1', { groupId: 'gNew', groupTitle: 'New Group' }),
+        placeholderDesired('g1', 'Needs review'),
       ],
       ownedTabs: [owned('1', 10)],
       existingTabs: [{ tabId: 10, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 }],
-      groupIdByName: { 'Needs review': 5 },
+      chromeGroupIdByGroup: { g1: 5 },
       autoClose: true,
     });
     expect(plan.toMove.map((m) => m.tabId)).toEqual([10]);
-    expect(plan.toCreate.map((d) => d.prId)).toEqual([placeholderPrId('Needs review')]);
+    expect(plan.toCreate.map((d) => d.prId)).toEqual([placeholderPrId('g1')]);
   });
 });
 
 describe('forceExtraCloses', () => {
-  const managed = (tabId: number, url: string, groupName = 'Needs review') => ({
+  const managed = (tabId: number, url: string, groupId = 'g1') => ({
     tabId,
     url,
-    groupName,
+    groupId,
   });
 
   it('closes user-added and non-PR tabs in managed groups', () => {
@@ -330,15 +407,26 @@ describe('forceExtraCloses', () => {
 
   it('closes a desired PR tab that sits in the wrong group', () => {
     const closes = forceExtraCloses(
-      [managed(1, 'https://github.com/acme/widgets/pull/1', 'Other group')],
-      [{ ...desired('1'), groupName: 'G' }],
+      [managed(1, 'https://github.com/acme/widgets/pull/1', 'gOther')],
+      [desired('1')],
     );
     expect(closes).toEqual([1]);
   });
 
+  it('keeps the same PR in two groups when both desire it', () => {
+    const closes = forceExtraCloses(
+      [
+        managed(1, 'https://github.com/acme/widgets/pull/1', 'gA'),
+        managed(2, 'https://github.com/acme/widgets/pull/1', 'gB'),
+      ],
+      [desired('1', { groupId: 'gA' }), desired('1', { groupId: 'gB' })],
+    );
+    expect(closes).toEqual([]);
+  });
+
   it('keeps a desired placeholder tab', () => {
     const closes = forceExtraCloses(
-      [managed(1, makePlaceholderUrl('Needs review'))],
+      [managed(1, makePlaceholderUrl('g1', 'Needs review'))],
       [placeholderDesired()],
     );
     expect(closes).toEqual([]);
@@ -346,7 +434,7 @@ describe('forceExtraCloses', () => {
 
   it('closes a placeholder in a group that no longer desires it', () => {
     const closes = forceExtraCloses(
-      [managed(1, makePlaceholderUrl('Needs review'))],
+      [managed(1, makePlaceholderUrl('g1', 'Needs review'))],
       [desired('1')],
     );
     expect(closes).toEqual([1]);

@@ -35,7 +35,18 @@ export async function loadDebugDump(): Promise<DebugDump[]> {
 
 export async function loadSyncState(): Promise<SyncState> {
   const data = await chrome.storage.session.get(KEY_SYNC_STATE);
-  return (data[KEY_SYNC_STATE] as SyncState | undefined) ?? { ownedTabs: [], groupIds: {} };
+  const raw = data[KEY_SYNC_STATE] as Partial<SyncState> | undefined;
+  // 拡張の更新はブラウザセッションをまたがないが session storage は生き残る。
+  // 旧スキーマ（groupIds / groupName 持ち ownedTabs）は空に落とす — 次の同期の
+  // title 養子縁組 + グループ内タブ採用で自己修復する（タブは閉じられない）。
+  const ownedTabs = Array.isArray(raw?.ownedTabs)
+    ? raw.ownedTabs.filter((t) => typeof t?.groupId === 'string')
+    : [];
+  const groups =
+    typeof raw?.groups === 'object' && raw.groups !== null && !Array.isArray(raw.groups)
+      ? raw.groups
+      : {};
+  return { ownedTabs, groups, backoffUntil: raw?.backoffUntil };
 }
 
 export async function saveSyncState(state: SyncState): Promise<void> {
