@@ -418,6 +418,23 @@ describe('computeTabSyncPlan (placeholders)', () => {
     expect(plan.toCreate).toEqual([]);
   });
 
+  it('creates a new placeholder when the old one was pinned out of the group (issue #73)', () => {
+    // Chrome 仕様上ピン留めするとグループから外れ、owned 検証で release される。
+    // 残ったピン留めタブに引きずられて作成が抑止されないこと（グループ消滅を防ぐ）。
+    const plan = computeTabSyncPlan({
+      desired: [placeholderDesired()],
+      ownedTabs: [],
+      existingTabs: [
+        { tabId: 40, url: makePlaceholderUrl('g1', 'Needs review'), groupId: -1, pinned: true },
+      ],
+      chromeGroupIdByGroup: { g1: 5 },
+      autoClose: true,
+    });
+    expect(plan.toAdopt).toEqual([]);
+    expect(plan.toClose).toEqual([]);
+    expect(plan.toCreate.map((d) => d.prId)).toEqual([placeholderPrId('g1')]);
+  });
+
   it('creates the placeholder for a group vacated by a move to another group', () => {
     const plan = computeTabSyncPlan({
       desired: [
