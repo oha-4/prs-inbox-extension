@@ -240,6 +240,62 @@ describe('computeTabSyncPlan', () => {
     expect(plan.toAdopt).toEqual([]);
   });
 
+  // 中途死（issue #23）の自己修復: 前回同期が saveSyncState 到達前に kill され、
+  // 作成済みタブが未登録（ownedTabs 空）で残ったケース。グループは resolveGroups の
+  // title 養子縁組で回収済み（chromeGroupIdByGroup に解決済みマッピングがある）とする。
+  // このとき desired の各PRは自グループ内の未所有タブを採用し、重複タブを作らない。
+  it('self-heal: adopts unregistered tabs left in a recovered group (no duplicates)', () => {
+    const plan = computeTabSyncPlan({
+      desired: [desired('1'), desired('2'), desired('3')],
+      ownedTabs: [], // SW が死んで登録が失われた
+      existingTabs: [
+        { tabId: 11, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 },
+        { tabId: 12, url: 'https://github.com/acme/widgets/pull/2', groupId: 5 },
+        { tabId: 13, url: 'https://github.com/acme/widgets/pull/3', groupId: 5 },
+      ],
+      chromeGroupIdByGroup: { g1: 5 }, // title 養子縁組で回収済み
+      autoClose: true,
+    });
+    expect(plan.toAdopt.map((o) => o.tabId).sort()).toEqual([11, 12, 13]);
+    expect(plan.toCreate).toEqual([]);
+    expect(plan.toClose).toEqual([]);
+  });
+
+  // 読み込み中タブは url が確定せず pendingUrl のみを持つ。tabSync 側の tabUrl
+  // ヘルパーが pendingUrl を URL として渡すため、diff から見れば通常の PR URL と
+  // 同じ（サブページ URL も prUrlKey で正規化）。採用できることを固定する。
+  it('self-heal: adopts a still-loading tab surfaced via its pending PR url', () => {
+    const plan = computeTabSyncPlan({
+      desired: [desired('1')],
+      ownedTabs: [],
+      existingTabs: [
+        { tabId: 20, url: 'https://github.com/acme/widgets/pull/1/files', groupId: 5 },
+      ],
+      chromeGroupIdByGroup: { g1: 5 },
+      autoClose: true,
+    });
+    expect(plan.toAdopt.map((o) => o.tabId)).toEqual([20]);
+    expect(plan.toCreate).toEqual([]);
+  });
+
+  // 部分保存（チェックポイント）後に落ちたケース: 一部だけ ownedTabs にあり、
+  // 残りは未登録。登録済みは keptOwned、未登録は採用され、重複は作られない。
+  it('self-heal: keeps checkpointed tabs and adopts the rest after a partial save', () => {
+    const plan = computeTabSyncPlan({
+      desired: [desired('1'), desired('2')],
+      ownedTabs: [owned('1', 11)], // チェックポイント済み
+      existingTabs: [
+        { tabId: 11, url: 'https://github.com/acme/widgets/pull/1', groupId: 5 },
+        { tabId: 12, url: 'https://github.com/acme/widgets/pull/2', groupId: 5 },
+      ],
+      chromeGroupIdByGroup: { g1: 5 },
+      autoClose: true,
+    });
+    expect(plan.keptOwned.map((o) => o.tabId)).toEqual([11]);
+    expect(plan.toAdopt.map((o) => o.tabId)).toEqual([12]);
+    expect(plan.toCreate).toEqual([]);
+  });
+
   it('never closes tabs it does not own', () => {
     const plan = computeTabSyncPlan({
       desired: [],
