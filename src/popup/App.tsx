@@ -109,7 +109,12 @@ export function App(): React.JSX.Element {
       </header>
 
       {view === 'settings' && settings ? (
-        <SettingsView settings={settings} update={update} saveError={saveError} />
+        <SettingsView
+          settings={settings}
+          update={update}
+          saveError={saveError}
+          onOpenFullPage={() => void chrome.runtime.openOptionsPage()}
+        />
       ) : (
         <>
           {snapshot && <ErrorBanner snapshot={snapshot} />}

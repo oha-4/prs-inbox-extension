@@ -5,6 +5,7 @@
   },
   "refresh": { "message": "Refresh" },
   "settings": { "message": "Settings" },
+  "openFullPage": { "message": "Open as full page" },
   "openInbox": { "message": "Open github.com/pulls/inbox" },
   "loading": { "message": "Loading…" },
   "updatedJustNow": { "message": "updated just now" },
