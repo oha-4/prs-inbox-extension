@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findSyncedTab, resolveClickAction } from '../src/lib/openPr';
+import { findSyncedTab, resolveClickAction, syncedTabMatchesPr } from '../src/lib/openPr';
 import type { OwnedTab } from '../src/types';
 
 function tab(tabId: number, prUrl: string): OwnedTab {
@@ -36,6 +36,30 @@ describe('findSyncedTab', () => {
     const owned = [tab(1, 'https://github.com/acme/widgets')];
     expect(findSyncedTab(owned, 'https://github.com/acme/widgets/pull/10')).toBeUndefined();
     expect(findSyncedTab([tab(1, 'chrome://newtab/')], 'chrome://newtab/')).toBeUndefined();
+  });
+});
+
+describe('syncedTabMatchesPr', () => {
+  it('matches when the tab is still on the same PR (sub-pages/anchors included)', () => {
+    const pr = 'https://github.com/acme/widgets/pull/20';
+    expect(syncedTabMatchesPr('https://github.com/acme/widgets/pull/20', pr)).toBe(true);
+    expect(syncedTabMatchesPr('https://github.com/acme/widgets/pull/20/files', pr)).toBe(true);
+    expect(syncedTabMatchesPr('https://github.com/acme/widgets/pull/20#discussion_r1', pr)).toBe(
+      true,
+    );
+  });
+
+  it('does not match when the tab was navigated away to another page', () => {
+    const pr = 'https://github.com/acme/widgets/pull/20';
+    expect(syncedTabMatchesPr('https://github.com/acme/widgets/pull/21', pr)).toBe(false);
+    expect(syncedTabMatchesPr('https://example.com/', pr)).toBe(false);
+    expect(syncedTabMatchesPr('https://github.com/acme/widgets', pr)).toBe(false);
+  });
+
+  it('does not match when the tab URL is unknown (undefined) or empty', () => {
+    const pr = 'https://github.com/acme/widgets/pull/20';
+    expect(syncedTabMatchesPr(undefined, pr)).toBe(false);
+    expect(syncedTabMatchesPr('', pr)).toBe(false);
   });
 });
 
