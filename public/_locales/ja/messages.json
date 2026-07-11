@@ -33,8 +33,6 @@
   "deleteGroup": { "message": "グループを削除" },
   "addSection": { "message": "セクションを追加" },
   "removeSection": { "message": "セクションを削除" },
-  "moveUp": { "message": "上へ" },
-  "moveDown": { "message": "下へ" },
   "groupNoSectionsHint": { "message": "同期するセクションを1つ以上追加してください。" },
   "groupNameEmptyHint": { "message": "グループ名を入力すると同期が始まります。" },
   "groupNameDuplicateHint": {

@@ -33,8 +33,6 @@
   "deleteGroup": { "message": "Delete group" },
   "addSection": { "message": "Add section" },
   "removeSection": { "message": "Remove section" },
-  "moveUp": { "message": "Move up" },
-  "moveDown": { "message": "Move down" },
   "groupNoSectionsHint": { "message": "Add at least one section to sync this group." },
   "groupNameEmptyHint": { "message": "Name this group to start syncing it." },
   "groupNameDuplicateHint": {

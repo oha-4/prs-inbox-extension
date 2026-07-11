@@ -4,8 +4,6 @@ import {
   Bell,
   Bug,
   Check,
-  ChevronDown,
-  ChevronUp,
   CloudDownload,
   Eye,
   EyeOff,
@@ -585,7 +583,7 @@ function SortableInboxRow({
 
 /**
  * グループに割り当てたセクションの順序付きリスト。並び順はタブグループ内の
- * 表示順に直結する（ソート未指定時）ため、↑↓で並べ替えられる。
+ * 表示順に直結する（ソート未指定時）ため、ドラッグ&ドロップで並べ替えられる。
  * 追加は未割当セクションの Select（value は常に空 = プレースホルダ表示）。
  */
 function GroupSectionList({
@@ -599,53 +597,41 @@ function GroupSectionList({
 }): React.JSX.Element {
   const labelById = new Map(sections.map((i) => [i.id, i.label]));
   const unassigned = sections.filter((i) => !sectionIds.includes(i.id));
-  const move = (idx: number, delta: -1 | 1): void => {
-    const next = [...sectionIds];
-    const [item] = next.splice(idx, 1);
-    next.splice(idx + delta, 0, item!);
-    onChange(next);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const onDragEnd = ({ active, over }: DragEndEvent): void => {
+    if (!over || active.id === over.id) return;
+    const from = sectionIds.indexOf(String(active.id));
+    const to = sectionIds.indexOf(String(over.id));
+    if (from === -1 || to === -1) return;
+    onChange(arrayMove(sectionIds, from, to));
   };
 
   return (
     <div className="space-y-1">
-      {sectionIds.map((id, idx) => (
-        <div key={id} className="flex items-center gap-1 text-[13px]">
-          <span className="text-muted-foreground w-4 shrink-0 text-right font-mono text-[10px]">
-            {idx + 1}
-          </span>
-          {/* 削除済みカスタムセクションへの残存参照は生の id を出す（気付けるように） */}
-          <span className="flex-1 truncate">{labelById.get(id) ?? id}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            aria-label={t('moveUp')}
-            disabled={idx === 0}
-            onClick={() => move(idx, -1)}
-          >
-            <ChevronUp className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            aria-label={t('moveDown')}
-            disabled={idx === sectionIds.length - 1}
-            onClick={() => move(idx, 1)}
-          >
-            <ChevronDown className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            aria-label={t('removeSection')}
-            onClick={() => onChange(sectionIds.filter((x) => x !== id))}
-          >
-            <X className="size-3.5" />
-          </Button>
-        </div>
-      ))}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+        onDragEnd={onDragEnd}
+      >
+        <SortableContext items={sectionIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-1">
+            {sectionIds.map((id) => (
+              <SortableGroupSectionRow
+                key={id}
+                id={id}
+                // 削除済みカスタムセクションへの残存参照は生の id を出す（気付けるように）
+                label={labelById.get(id) ?? id}
+                onRemove={() => onChange(sectionIds.filter((x) => x !== id))}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
       {unassigned.length > 0 && (
         <Select value="" onValueChange={(id) => onChange([...sectionIds, id])}>
           <SelectTrigger
@@ -666,6 +652,50 @@ function GroupSectionList({
           </SelectContent>
         </Select>
       )}
+    </div>
+  );
+}
+
+function SortableGroupSectionRow({
+  id,
+  label,
+  onRemove,
+}: {
+  id: string;
+  label: string;
+  onRemove: () => void;
+}): React.JSX.Element {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        'bg-background flex items-center gap-1 text-[13px]',
+        isDragging && 'relative z-10 opacity-80',
+      )}
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label={t('dragToReorder')}
+        className="text-muted-foreground hover:text-foreground shrink-0 cursor-grab touch-none active:cursor-grabbing"
+      >
+        <GripVertical className="size-3.5" />
+      </button>
+      <span className="flex-1 truncate">{label}</span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-6"
+        aria-label={t('removeSection')}
+        onClick={onRemove}
+      >
+        <X className="size-3.5" />
+      </Button>
     </div>
   );
 }
