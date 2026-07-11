@@ -1,5 +1,5 @@
 import type { ClickAction } from '../../lib/openPr';
-import { findSyncedTab } from '../../lib/openPr';
+import { findSyncedTab, syncedTabMatchesPr } from '../../lib/openPr';
 import { loadSyncState } from '../../storage';
 
 /**
@@ -22,16 +22,29 @@ export async function openPr(pr: { url: string }, action: ClickAction): Promise<
     const { ownedTabs } = await loadSyncState();
     const owned = findSyncedTab(ownedTabs, pr.url);
     if (owned) {
+      let reused = false;
       try {
-        await chrome.tabs.update(owned.tabId, { active: true });
+        // 保存時の prUrl ではなくタブの現在URLを照合してから前面化する。
+        // 別ページへ手動遷移済み・取得失敗なら再利用せず新規タブへフォールバック（下へ）。
         const tab = await chrome.tabs.get(owned.tabId);
-        if (typeof tab.windowId === 'number') {
-          await chrome.windows.update(tab.windowId, { focused: true });
+        if (syncedTabMatchesPr(tab.url ?? tab.pendingUrl, pr.url)) {
+          await chrome.tabs.update(owned.tabId, { active: true });
+          reused = true;
+          // activate 成功後の focus 切替は失敗してもフォールバックに落とさない（二重タブ防止）。
+          if (typeof tab.windowId === 'number') {
+            try {
+              await chrome.windows.update(tab.windowId, { focused: true });
+            } catch {
+              // ウィンドウのフォーカス切替失敗は無視（タブは既にアクティブ化済み）。
+            }
+          }
         }
-        window.close();
-        return;
       } catch {
         // タブが既に消えている等 → 新規フォアグラウンドタブへフォールバック（下へ）
+      }
+      if (reused) {
+        window.close();
+        return;
       }
     }
   }

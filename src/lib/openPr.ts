@@ -25,6 +25,16 @@ export interface ClickModifiers {
 }
 
 /**
+ * 同期所有タブの「現在URL」がまだ対象PRを指しているか。
+ * SyncState 保存時の prUrl ではなくタブの実URL（url ?? pendingUrl）で照合するために使う。
+ * ユーザーが管理タブを別ページへ手動遷移していれば false → 再利用せず新規タブへフォールバックさせる。
+ * URL 未確定（undefined）や PR 以外のURLも false。
+ */
+export function syncedTabMatchesPr(tabUrl: string | undefined, prUrl: string): boolean {
+  return tabUrl !== undefined && isSamePr(tabUrl, prUrl);
+}
+
+/**
  * クリック挙動設定と修飾キー / マウスボタンから、実際に取る操作を決める。
  * - Shift: `null` を返す＝**インターセプトしない**。呼び出し側は preventDefault せず、
  *   アンカーの href によるブラウザ標準の「新規ウィンドウで開く」に委ねる。
