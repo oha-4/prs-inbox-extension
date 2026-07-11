@@ -568,7 +568,7 @@ function SortableInboxRow({
       <Button
         variant="ghost"
         size="icon"
-        className="size-7 shrink-0"
+        className="size-6 shrink-0"
         aria-label={t('toggleSectionVisibility', label)}
         aria-pressed={!hidden}
         onClick={() => onToggle(hidden)}
