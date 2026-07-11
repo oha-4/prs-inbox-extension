@@ -4,7 +4,18 @@ import { t } from '../../lib/i18n';
 import { Button } from '@/components/ui/button';
 
 export function ErrorBanner({ snapshot }: { snapshot: InboxSnapshot }): React.JSX.Element | null {
-  if (snapshot.authState === 'ok') return null;
+  if (snapshot.authState === 'ok') {
+    // 一部セクションだけ取得失敗（他は新データ）。該当セクションは前回データを表示中。
+    if (snapshot.sectionErrors && snapshot.sectionErrors.length > 0) {
+      return (
+        <div className="animate-in slide-in-from-top-2 fade-in flex items-center gap-2 border-b bg-amber-500/10 px-3 py-2 text-xs text-amber-700 duration-200 dark:text-amber-400">
+          <TriangleAlert className="size-3.5 shrink-0" />
+          <span className="flex-1">{t('sectionsFetchFailed')}</span>
+        </div>
+      );
+    }
+    return null;
+  }
 
   if (snapshot.authState === 'logged_out') {
     return (

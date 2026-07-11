@@ -45,8 +45,7 @@ async function syncTabsLocked(force: boolean): Promise<void> {
   // 未登録のまま残り、次回同期で同一PRの重複タブが生まれうる（issue #23）。
   // 採用/作成/移動のたびに ownedTabs と（新規作成で変化する）groups を保存する。
   // ロック内なので自己競合はなく、storage.session は quota/レート制限が実質ない。
-  const persist = (ownedTabs: OwnedTab[]): Promise<void> =>
-    saveSyncState({ ownedTabs, groups, backoffUntil: state.backoffUntil });
+  const persist = (ownedTabs: OwnedTab[]): Promise<void> => saveSyncState({ ownedTabs, groups });
 
   const resultOwned = force
     ? await executeForce(desired, groups, persist)
@@ -56,7 +55,7 @@ async function syncTabsLocked(force: boolean): Promise<void> {
   const keyToTabId = new Map(resultOwned.map((o) => [`${o.groupId} ${o.prId}`, o.tabId]));
   await reorderGroups(orderByGroup, groups, keyToTabId);
 
-  await saveSyncState({ ownedTabs: resultOwned, groups, backoffUntil: state.backoffUntil });
+  await saveSyncState({ ownedTabs: resultOwned, groups });
 }
 
 /**
@@ -165,7 +164,17 @@ async function executeNormal(
       await persist(nextOwned);
     }
   }
-  if (plan.toClose.length > 0) await chrome.tabs.remove(plan.toClose).catch(() => {});
+  // 一括 remove は無効IDが1つ混ざると全滅するため1件ずつ閉じる。
+  // 閉じ損ねてまだ存在するタブは所有権を戻し、次回同期で再試行する
+  // （手放すと「ユーザーのタブ」として尊重され二度と閉じなくなる）。
+  if (plan.toClose.length > 0) {
+    const ownedByTabId = new Map(validOwned.map((ot) => [ot.tabId, ot]));
+    const { stillOpen } = await removeTabsIndividually(plan.toClose);
+    for (const id of stillOpen) {
+      const owned = ownedByTabId.get(id);
+      if (owned) nextOwned.push(owned);
+    }
+  }
   return nextOwned;
 }
 
@@ -226,8 +235,36 @@ async function executeForce(
       }
     }
   }
-  if (closes.length > 0) await chrome.tabs.remove(closes).catch(() => {});
+  // 通常同期と同じく1件ずつ閉じる（無効IDでの全滅を避ける）。閉じ損ねたタブは
+  // 残存しても次回の force-align で再び重複/不要として閉じられ自然に整合する。
+  if (closes.length > 0) await removeTabsIndividually(closes);
   return owned;
+}
+
+/**
+ * タブを1件ずつ閉じる。一括 chrome.tabs.remove(number[]) は無効IDが1つでも
+ * 混ざると全体が reject し1件も閉じないため使わない。
+ * 戻り値: closed=実際に閉じたID / stillOpen=閉じ損ねてまだ存在するID。
+ */
+async function removeTabsIndividually(
+  ids: number[],
+): Promise<{ closed: number[]; stillOpen: number[] }> {
+  const results = await Promise.allSettled(ids.map((id) => chrome.tabs.remove(id)));
+  const closed: number[] = [];
+  const stillOpen: number[] = [];
+  for (let i = 0; i < results.length; i++) {
+    const id = ids[i]!;
+    if (results[i]!.status === 'fulfilled') {
+      closed.push(id);
+      continue;
+    }
+    const exists = await chrome.tabs
+      .get(id)
+      .then(() => true)
+      .catch(() => false);
+    if (exists) stillOpen.push(id);
+  }
+  return { closed, stillOpen };
 }
 
 /** 各グループのタブを orderByGroup の順に整列（ベストエフォート） */
