@@ -6,6 +6,7 @@ import {
   isSectionHidden,
   listSections,
   MAX_CUSTOM_SECTIONS,
+  MAX_POLL_INTERVAL,
   MAX_SYNC_GROUPS,
   mergeSettings,
   orderedInboxSections,
@@ -49,6 +50,33 @@ describe('mergeSettings', () => {
   it('rejects invalid interval values', () => {
     expect(mergeSettings({ pollIntervalMinutes: 0 }).pollIntervalMinutes).toBe(5);
     expect(mergeSettings({ pollIntervalMinutes: -3 }).pollIntervalMinutes).toBe(5);
+  });
+
+  it('rejects non-integer and out-of-range intervals, keeping valid ones', () => {
+    // 非整数 → 既定値
+    expect(mergeSettings({ pollIntervalMinutes: 1.5 }).pollIntervalMinutes).toBe(5);
+    // 上限超え（巨大値含む）→ 既定値
+    expect(mergeSettings({ pollIntervalMinutes: 10000 }).pollIntervalMinutes).toBe(5);
+    expect(mergeSettings({ pollIntervalMinutes: 1e9 }).pollIntervalMinutes).toBe(5);
+    // NaN・非数値 → 既定値
+    expect(mergeSettings({ pollIntervalMinutes: Number.NaN }).pollIntervalMinutes).toBe(5);
+    expect(
+      mergeSettings({ pollIntervalMinutes: '10' as unknown as number }).pollIntervalMinutes,
+    ).toBe(5);
+    // 境界の有効値はそのまま
+    expect(mergeSettings({ pollIntervalMinutes: 1 }).pollIntervalMinutes).toBe(1);
+    expect(mergeSettings({ pollIntervalMinutes: MAX_POLL_INTERVAL }).pollIntervalMinutes).toBe(
+      MAX_POLL_INTERVAL,
+    );
+  });
+
+  it('whitelists maxPrAge and falls back to default for unknown values', () => {
+    expect(mergeSettings({ maxPrAge: '1y' }).maxPrAge).toBe('1y');
+    // 未知値（UI にない任意文字列）→ 既定値。private API へ不正クエリを載せない
+    expect(mergeSettings({ maxPrAge: '99y' }).maxPrAge).toBe('1m');
+    expect(mergeSettings({ maxPrAge: 'evil query' }).maxPrAge).toBe('1m');
+    expect(mergeSettings({ maxPrAge: '' }).maxPrAge).toBe('1m');
+    expect(mergeSettings({ maxPrAge: 5 as unknown as string }).maxPrAge).toBe('1m');
   });
 
   it('defaults badgeIncludeTeamReview off and respects the stored value', () => {

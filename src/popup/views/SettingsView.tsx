@@ -43,8 +43,11 @@ import {
   CUSTOM_SECTION_PREFIX,
   listSections,
   MAX_CUSTOM_SECTIONS,
+  MAX_POLL_INTERVAL,
+  MAX_PR_AGE_VALUES,
   MAX_SORT_CRITERIA,
   MAX_SYNC_GROUPS,
+  MIN_POLL_INTERVAL,
   orderedInboxSections,
   SORT_KEYS,
 } from '../../lib/settings';
@@ -356,14 +359,15 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
             {t('pollIntervalLabel')}
             <Input
               type="number"
-              min={1}
-              max={120}
+              min={MIN_POLL_INTERVAL}
+              max={MAX_POLL_INTERVAL}
               className="h-7 w-16 text-xs"
               value={settings.pollIntervalMinutes}
               onChange={(e) => {
                 const v = Number(e.target.value);
-                if (Number.isFinite(v) && v >= 1) {
-                  update((s) => ({ ...s, pollIntervalMinutes: Math.floor(v) }));
+                if (Number.isFinite(v) && v >= MIN_POLL_INTERVAL) {
+                  const clamped = Math.min(MAX_POLL_INTERVAL, Math.floor(v));
+                  update((s) => ({ ...s, pollIntervalMinutes: clamped }));
                 }
               }}
             />
@@ -378,8 +382,11 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1m">{t('age1m')}</SelectItem>
-                <SelectItem value="1y">{t('age1y')}</SelectItem>
+                {MAX_PR_AGE_VALUES.map((v) => (
+                  <SelectItem key={v} value={v}>
+                    {t(`age${v}`)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </label>

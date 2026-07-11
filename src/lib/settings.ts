@@ -10,6 +10,21 @@ import type {
 export const SORT_KEYS: SortKey[] = ['repo', 'created', 'updated'];
 export const MAX_SORT_CRITERIA = 2;
 
+/**
+ * ポーリング間隔の許容範囲（分）。UI（SettingsView の number input の min/max）と
+ * mergeSettings のバリデーションで共有する。範囲外・非整数は既定値へ矯正する。
+ */
+export const MIN_POLL_INTERVAL = 1;
+export const MAX_POLL_INTERVAL = 120;
+
+/**
+ * max_pr_age に許可する値（private API のクエリにそのまま載るため許可リストで縛る）。
+ * UI（SettingsView の選択肢）と mergeSettings のバリデーションで共有する。
+ * 先頭を既定値とする。
+ */
+export const MAX_PR_AGE_VALUES = ['1m', '1y'] as const;
+export type MaxPrAge = (typeof MAX_PR_AGE_VALUES)[number];
+
 /** storage.sync の 8KB/item 制限に対する防御（エラーではなく黙って切り詰める） */
 export const MAX_SYNC_GROUPS = 20;
 export const MAX_CUSTOM_SECTIONS = 20;
@@ -38,7 +53,7 @@ export const SECTION_ORDER: SectionId[] = KNOWN_SECTIONS.map((s) => s.id);
 export function defaultSettings(): Settings {
   return {
     pollIntervalMinutes: 5,
-    maxPrAge: '1m',
+    maxPrAge: MAX_PR_AGE_VALUES[0],
     autoCloseRemoved: true,
     badgeEnabled: true,
     badgeIncludeTeamReview: false,
@@ -126,10 +141,10 @@ export function mergeSettings(stored: unknown): Settings {
   const s = stored as Partial<Settings>;
   return {
     ...base,
-    ...(typeof s.pollIntervalMinutes === 'number' && s.pollIntervalMinutes >= 1
+    ...(isValidPollInterval(s.pollIntervalMinutes)
       ? { pollIntervalMinutes: s.pollIntervalMinutes }
       : {}),
-    ...(typeof s.maxPrAge === 'string' && s.maxPrAge ? { maxPrAge: s.maxPrAge } : {}),
+    ...(isKnownMaxPrAge(s.maxPrAge) ? { maxPrAge: s.maxPrAge } : {}),
     ...(typeof s.autoCloseRemoved === 'boolean' ? { autoCloseRemoved: s.autoCloseRemoved } : {}),
     ...(typeof s.badgeEnabled === 'boolean' ? { badgeEnabled: s.badgeEnabled } : {}),
     ...(typeof s.badgeIncludeTeamReview === 'boolean'
@@ -156,6 +171,21 @@ export function mergeSettings(stored: unknown): Settings {
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === 'string' && v.trim().length > 0;
+}
+
+/**
+ * ポーリング間隔として有効か。整数かつ [MIN_POLL_INTERVAL, MAX_POLL_INTERVAL]。
+ * 非整数（1.5）・範囲外（0, 1e9）は不正 → 既定値へフォールバック。
+ */
+function isValidPollInterval(v: unknown): v is number {
+  return (
+    typeof v === 'number' && Number.isInteger(v) && v >= MIN_POLL_INTERVAL && v <= MAX_POLL_INTERVAL
+  );
+}
+
+/** max_pr_age が既知値か（許可リスト照合）。未知値は既定値へフォールバック */
+function isKnownMaxPrAge(v: unknown): v is MaxPrAge {
+  return typeof v === 'string' && (MAX_PR_AGE_VALUES as readonly string[]).includes(v);
 }
 
 /** セクションid配列の検証: 非空文字のみ、重複除去（順序は保持） */
