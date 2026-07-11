@@ -13,8 +13,8 @@ shadcn/ui (`src/components/ui`) · lucide icons.
 
 ## Commands
 
-Node is pinned via `.tool-versions` (nodejs 24.16.0). If `npm`/`node` aren't on
-PATH, run through mise: `mise exec node@24.16.0 -- <cmd>`.
+Node is pinned via `.tool-versions` (nodejs 24.18.0). If `npm`/`node` aren't on
+PATH, run through mise: `mise exec node@24.18.0 -- <cmd>`.
 
 ```sh
 npm run dev         # vite build --watch (crxjs)

@@ -54,5 +54,8 @@
     "@crxjs/vite-plugin": {
       "rollup": "^2.80.0"
     }
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true
   }
 }
