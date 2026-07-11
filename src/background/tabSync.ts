@@ -132,7 +132,12 @@ async function executeNormal(
   const allTabs = await chrome.tabs.query({});
   const existingTabs: ExistingTabInfo[] = allTabs
     .filter((t) => t.id !== undefined)
-    .map((t) => ({ tabId: t.id!, url: tabUrl(t), groupId: t.groupId ?? TAB_GROUP_ID_NONE }));
+    .map((t) => ({
+      tabId: t.id!,
+      url: tabUrl(t),
+      groupId: t.groupId ?? TAB_GROUP_ID_NONE,
+      pinned: t.pinned,
+    }));
 
   const plan = computeTabSyncPlan({
     desired,

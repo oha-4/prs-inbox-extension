@@ -15,6 +15,8 @@ export interface ExistingTabInfo {
   url: string;
   /** chrome.tabs.Tab.groupId（未所属は -1） */
   groupId: number;
+  /** ピン留めタブか。Chrome 仕様上ピン留めするとグループから外れる（chrome.tabs.Tab.pinned） */
+  pinned?: boolean;
 }
 
 export interface TabSyncPlan {
@@ -198,10 +200,16 @@ export function computeTabSyncPlan(input: {
     }
     const key = placeholderKey(d.url);
     const ownChromeId = input.chromeGroupIdByGroup[d.groupId];
+    // ピン留めタブは除外する。Chrome 仕様上ピン留めするとグループから外れ、
+    // owned 検証で release される。それが candidates に残ると「グループ外に一致
+    // タブがある」として新規プレースホルダの作成を抑止し、keepEmptyGroups でも
+    // グループが空のまま消滅してしまう（issue #73）。ユーザーが明示的にピン留め
+    // したタブなので閉じはせず、無視して新しいプレースホルダを作る。
     const candidates = input.existingTabs.filter(
       (t) =>
         !ownedTabIds.has(t.tabId) &&
         !claimedTabIds.has(t.tabId) &&
+        !t.pinned &&
         key !== null &&
         tabKey(t.url) === key,
     );
