@@ -160,7 +160,7 @@ export function SettingsView({ settings, update, saveError }: Props): React.JSX.
               update((s) => ({ ...s, clickBehavior: v as SettingsType['clickBehavior'] }))
             }
           >
-            <SelectTrigger size="sm" className="w-44">
+            <SelectTrigger size="sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
