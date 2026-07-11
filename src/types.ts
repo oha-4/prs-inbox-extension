@@ -139,3 +139,11 @@ export type Msg =
   | { type: 'SYNC_TABS_NOW' }
   | { type: 'FORCE_SYNC' }
   | { type: 'DUMP_DEBUG' };
+
+/**
+ * background の onMessage ハンドラが必ず返す応答形。
+ * - 通常のコマンド: `{ ok: true }`（REFRESH のデバウンススキップは `skipped: true`）
+ * - 失敗時: `{ ok: false, error }`（ハンドラ内の promise が reject してもこの形で返す）
+ * - DUMP_DEBUG: `{ saved: number }`
+ */
+export type MsgResponse = { ok: boolean; skipped?: boolean; error?: string } | { saved: number };
