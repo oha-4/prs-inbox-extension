@@ -5,6 +5,7 @@ const KEY_SETTINGS = 'settings';
 const KEY_SNAPSHOT = 'snapshot';
 const KEY_DEBUG_DUMP = 'debugDump';
 const KEY_SYNC_STATE = 'syncState';
+const KEY_BACKOFF_UNTIL = 'backoffUntil';
 
 export async function loadSettings(): Promise<Settings> {
   const data = await chrome.storage.sync.get(KEY_SETTINGS);
@@ -46,11 +47,26 @@ export async function loadSyncState(): Promise<SyncState> {
     typeof raw?.groups === 'object' && raw.groups !== null && !Array.isArray(raw.groups)
       ? raw.groups
       : {};
-  return { ownedTabs, groups, backoffUntil: raw?.backoffUntil };
+  return { ownedTabs, groups };
 }
 
 export async function saveSyncState(state: SyncState): Promise<void> {
   await chrome.storage.session.set({ [KEY_SYNC_STATE]: state });
+}
+
+/**
+ * 429 バックオフ期限（epoch ms）。SyncState とは別キーで持つことで、
+ * tabSync が完了時に SyncState を書いても poll が設定したバックオフを
+ * 古い値で上書きしない（poll と tabSync が独立して読み書きする）。
+ */
+export async function loadBackoffUntil(): Promise<number | undefined> {
+  const data = await chrome.storage.session.get(KEY_BACKOFF_UNTIL);
+  const v = data[KEY_BACKOFF_UNTIL];
+  return typeof v === 'number' ? v : undefined;
+}
+
+export async function saveBackoffUntil(until: number): Promise<void> {
+  await chrome.storage.session.set({ [KEY_BACKOFF_UNTIL]: until });
 }
 
 export const STORAGE_KEYS = {
@@ -58,4 +74,5 @@ export const STORAGE_KEYS = {
   snapshot: KEY_SNAPSHOT,
   debugDump: KEY_DEBUG_DUMP,
   syncState: KEY_SYNC_STATE,
+  backoffUntil: KEY_BACKOFF_UNTIL,
 } as const;

@@ -48,7 +48,7 @@ async function syncTabsLocked(force: boolean): Promise<void> {
   const keyToTabId = new Map(resultOwned.map((o) => [`${o.groupId} ${o.prId}`, o.tabId]));
   await reorderGroups(orderByGroup, groups, keyToTabId);
 
-  await saveSyncState({ ownedTabs: resultOwned, groups, backoffUntil: state.backoffUntil });
+  await saveSyncState({ ownedTabs: resultOwned, groups });
 }
 
 /**

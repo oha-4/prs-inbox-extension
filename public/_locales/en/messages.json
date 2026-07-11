@@ -24,6 +24,9 @@
   "logIn": { "message": "Log in" },
   "rateLimited": { "message": "Rate limited. Polling will resume automatically." },
   "fetchFailed": { "message": "Failed to fetch" },
+  "sectionsFetchFailed": {
+    "message": "Some sections failed to load. Showing their last known data."
+  },
   "tabGroupSyncHeader": { "message": "Tab group sync" },
   "tabGroupSyncHint": {
     "message": "Create tab groups and add sections to each one. Tabs follow the section order unless a sort is set. A PR in several added sections gets one tab per group."
