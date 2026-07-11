@@ -2,6 +2,8 @@
 
 Zen Browserの「Live Folder」風に、GitHubの [PR Inbox](https://github.com/pulls/inbox) をChromeのタブグループへ自動同期する拡張機能。ポップアップではInboxのコンパクトなリスト表示も提供する。
 
+**[Chrome Web Store からインストール](https://chromewebstore.google.com/detail/prs-inbox-for-github/fmghddbkgblnhhgckmkcefehnmooojjf)**
+
 サービスサイト（利用規約・プライバシーポリシー）: <https://oha-4.github.io/prs-inbox-extension/>（ソースは `site/`）
 
 ## 機能
@@ -17,7 +19,13 @@ Zen Browserの「Live Folder」風に、GitHubの [PR Inbox](https://github.com/
 
 UIは React + Tailwind CSS v4 + [shadcn/ui](https://ui.shadcn.com/)（`src/components/ui/`）+ [lucide](https://lucide.dev/) アイコンで構築。ライト/ダークテーマはブラウザ設定に自動追従する。
 
-## インストール（開発版）
+## インストール
+
+[Chrome Web Store](https://chromewebstore.google.com/detail/prs-inbox-for-github/fmghddbkgblnhhgckmkcefehnmooojjf) から追加する。
+
+github.com にログインしたブラウザセッションをそのまま使うため、トークン設定は不要。
+
+### 開発版（手動ビルド）
 
 Nodeのバージョンは `.tool-versions`（mise / asdf）で管理している。
 
@@ -27,8 +35,6 @@ npm run build
 ```
 
 Chromeで `chrome://extensions` → デベロッパーモードON → 「パッケージ化されていない拡張機能を読み込む」→ `dist/` を選択。
-
-github.com にログインしたブラウザセッションをそのまま使うため、トークン設定は不要。
 
 ## 開発
 

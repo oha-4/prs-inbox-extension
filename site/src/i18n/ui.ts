@@ -29,5 +29,5 @@ export const ui = {
 export type Lang = keyof typeof ui;
 
 export const REPO_URL = 'https://github.com/oha-4/prs-inbox-extension';
-// TODO: Chrome Web Store 掲載後に実URLへ差し替える
-export const STORE_URL = '';
+export const STORE_URL =
+  'https://chromewebstore.google.com/detail/prs-inbox-for-github/fmghddbkgblnhhgckmkcefehnmooojjf';
