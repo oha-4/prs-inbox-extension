@@ -110,7 +110,10 @@ Accept: application/json        (cookie auth, credentials: 'include')
   Renaming a group **in settings** retitles the chrome group in place (the
   stored last-set title disambiguates); renaming the chrome group **by hand**
   releases it — by design. New groups are created in the window of an existing
-  managed group when there is one (last-focused window otherwise).
+  managed group when there is one (last-focused window otherwise). With managed
+  groups split across multiple windows, a new group deterministically lands on
+  the last-focused window's side (else the window holding the most managed
+  groups) — see `src/lib/windowPlacement.ts`.
 - **Force-align** (button / `forceAlignOnRefresh`) reconciles managed groups to
   exactly the desired set, ignoring user-added/removed tabs.
 - Synced tabs are created `active:false` and **left to load** (no `discard`) so

@@ -8,6 +8,7 @@ import {
 } from '../lib/diff';
 import { tabKey } from '../lib/placeholder';
 import { activeSyncGroups } from '../lib/settings';
+import { pickWindowId } from '../lib/windowPlacement';
 import { loadSettings, loadSnapshot, loadSyncState, saveSyncState } from '../storage';
 
 const TAB_GROUP_ID_NONE = -1;
@@ -299,9 +300,15 @@ function tabUrl(tab: chrome.tabs.Tab): string {
 }
 
 /**
- * タブ/グループを置くべきウィンドウ。自グループ → 他の管理グループ →
- * 最後にフォーカスされた通常ウィンドウ、の順。新規グループが既存の管理
- * グループと別ウィンドウへ散らばるのを防ぐ。
+ * タブ/グループを置くべきウィンドウを決定的に選ぶ。
+ * 1. 自グループが既に解決済みなら、その chrome グループのウィンドウ。
+ * 2. 無ければ他の管理グループが載るウィンドウを集め、`pickWindowId` の
+ *    優先規則で選ぶ:
+ *      a. 直近フォーカスした通常ウィンドウに管理グループがあれば最優先
+ *      b. 無ければ管理グループ数が最多のウィンドウ（タブ数ではなくグループ数）
+ *      c. 同数なら候補の挿入順で最初のウィンドウ
+ * 3. 他に管理グループが無ければ直近フォーカスウィンドウへフォールバック。
+ * 複数ウィンドウ運用時に新規グループの配置が挿入順依存で非決定的になるのを防ぐ。
  */
 async function targetWindowId(
   groupId: string,
@@ -312,13 +319,15 @@ async function targetWindowId(
     const g = await chrome.tabGroups.get(own.chromeGroupId).catch(() => null);
     if (g) return g.windowId;
   }
+  // 他の管理グループが載るウィンドウを groups の挿入順で1グループ1要素ずつ集める
+  const candidateWindowIds: number[] = [];
   for (const [id, entry] of Object.entries(groups)) {
     if (id === groupId) continue;
     const g = await chrome.tabGroups.get(entry.chromeGroupId).catch(() => null);
-    if (g) return g.windowId;
+    if (g) candidateWindowIds.push(g.windowId);
   }
   const w = await chrome.windows.getLastFocused({ windowTypes: ['normal'] }).catch(() => null);
-  return w?.id;
+  return pickWindowId(candidateWindowIds, w?.id);
 }
 
 /**
