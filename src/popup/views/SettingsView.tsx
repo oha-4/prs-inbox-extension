@@ -675,7 +675,7 @@ function SortableInboxRow({
         variant="ghost"
         size="icon"
         className="size-6 shrink-0"
-        aria-label={t('toggleSectionVisibility', label)}
+        aria-label={t(hidden ? 'showSectionInPopup' : 'hideSectionInPopup', label)}
         aria-pressed={!hidden}
         onClick={() => onToggle(hidden)}
       >

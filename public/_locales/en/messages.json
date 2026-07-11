@@ -72,8 +72,12 @@
     "message": "Choose which sections show in the popup and drag to reorder them. Display only — this doesn't change fetching, the badge count, or tab-group sync."
   },
   "dragToReorder": { "message": "Drag to reorder" },
-  "toggleSectionVisibility": {
+  "showSectionInPopup": {
     "message": "Show $SECTION$ in the popup",
+    "placeholders": { "section": { "content": "$1" } }
+  },
+  "hideSectionInPopup": {
+    "message": "Hide $SECTION$ in the popup",
     "placeholders": { "section": { "content": "$1" } }
   },
   "sortHeader": { "message": "Tab order within each group" },
