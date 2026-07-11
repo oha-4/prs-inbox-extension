@@ -69,6 +69,14 @@ export interface CustomSection {
   query: string;
 }
 
+/**
+ * popup の PR 行クリック時の挙動。
+ * - newTab: 新規フォアグラウンドタブを開き popup を閉じる（既定・現行挙動）
+ * - reuseSynced: タブ同期が所有する同一PRのタブがあればそれをアクティブ化、無ければ新規タブ
+ * - background: 常にバックグラウンドで開き popup は閉じない（連続 triage 用）
+ */
+export type ClickBehavior = 'newTab' | 'reuseSynced' | 'background';
+
 /** グループ内ソートのキー。最大2段まで順番に重ねる */
 export type SortKey = 'repo' | 'created' | 'updated';
 export type SortDir = 'asc' | 'desc';
@@ -92,6 +100,8 @@ export interface Settings {
   forceAlignOnRefresh: boolean;
   /** PRが0件になった有効グループをプレースホルダタブ（Inbox Zeroページ）で維持し、位置を保つか（既定: off） */
   keepEmptyGroups: boolean;
+  /** popup で PR 行をクリックしたときの挙動（既定: 'newTab' = 新規タブで開く） */
+  clickBehavior: ClickBehavior;
   /** 同期グループ（同期対象はグループ所属で決まる。popup表示は下記2フィールドで制御） */
   syncGroups: SyncGroup[];
   customSections: CustomSection[];

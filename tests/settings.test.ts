@@ -79,6 +79,16 @@ describe('mergeSettings', () => {
     expect(mergeSettings({ maxPrAge: 5 as unknown as string }).maxPrAge).toBe('1m');
   });
 
+  it('defaults clickBehavior to newTab and whitelists known values', () => {
+    expect(defaultSettings().clickBehavior).toBe('newTab');
+    expect(mergeSettings({ clickBehavior: 'reuseSynced' }).clickBehavior).toBe('reuseSynced');
+    expect(mergeSettings({ clickBehavior: 'background' }).clickBehavior).toBe('background');
+    // 未知値・非文字列 → 既定値へフォールバック
+    expect(mergeSettings({ clickBehavior: 'teleport' }).clickBehavior).toBe('newTab');
+    expect(mergeSettings({ clickBehavior: '' }).clickBehavior).toBe('newTab');
+    expect(mergeSettings({ clickBehavior: 1 as unknown as string }).clickBehavior).toBe('newTab');
+  });
+
   it('defaults badgeIncludeTeamReview off and respects the stored value', () => {
     expect(defaultSettings().badgeIncludeTeamReview).toBe(false);
     expect(mergeSettings({ badgeIncludeTeamReview: true }).badgeIncludeTeamReview).toBe(true);

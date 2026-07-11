@@ -14,6 +14,7 @@ import {
   Info,
   ListFilter,
   Loader2,
+  MousePointerClick,
   Plus,
   Trash2,
   TriangleAlert,
@@ -41,6 +42,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { Settings as SettingsType, SortKey } from '../../types';
 import { t } from '../../lib/i18n';
 import {
+  CLICK_BEHAVIORS,
   CUSTOM_SECTION_PREFIX,
   listSections,
   MAX_CUSTOM_SECTIONS,
@@ -149,6 +151,26 @@ export function SettingsView({ settings, update, saveError }: Props): React.JSX.
           <SubHeader icon={Eye}>{t('inboxSectionsHeader')}</SubHeader>
           <p className="text-muted-foreground text-[11px]">{t('inboxSectionsHint')}</p>
           <InboxSectionList settings={settings} update={update} />
+        </div>
+        <div className="space-y-2">
+          <SubHeader icon={MousePointerClick}>{t('clickBehaviorLabel')}</SubHeader>
+          <Select
+            value={settings.clickBehavior}
+            onValueChange={(v) =>
+              update((s) => ({ ...s, clickBehavior: v as SettingsType['clickBehavior'] }))
+            }
+          >
+            <SelectTrigger size="sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CLICK_BEHAVIORS.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {t(`clickBehavior_${v}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <SubHeader icon={Bell}>{t('badgeHeader')}</SubHeader>

@@ -30,6 +30,8 @@ const KEY_TARGETS: Record<keyof Settings, Target[]> = {
   sortCriteria: ['tabSync'],
   forceAlignOnRefresh: ['tabSync'],
   keepEmptyGroups: ['tabSync'],
+  // popup の行クリック挙動のみ。バックグラウンド処理には影響しない
+  clickBehavior: [],
   syncGroups: ['tabSync'],
   customSections: ['tabSync'],
   // popup 表示のみ（取得・バッジ・タブ同期に影響しない）

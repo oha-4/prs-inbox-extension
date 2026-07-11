@@ -1,15 +1,21 @@
 import { MessageSquare } from 'lucide-react';
-import type { PullRequest } from '../../types';
+import type { ClickBehavior, PullRequest } from '../../types';
 import { localizeRelative } from '../../lib/i18n';
 import { formatRelative } from '../../lib/time';
 import { cn } from '@/lib/utils';
+import { openPr } from '../lib/openPr';
 import { StateIcon } from './StateIcon';
 
-export function PrRow({ pr }: { pr: PullRequest }): React.JSX.Element {
+export function PrRow({
+  pr,
+  clickBehavior,
+}: {
+  pr: PullRequest;
+  clickBehavior: ClickBehavior;
+}): React.JSX.Element {
   const open = (e: React.MouseEvent): void => {
     e.preventDefault();
-    void chrome.tabs.create({ url: pr.url, active: !e.metaKey && !e.ctrlKey });
-    if (!e.metaKey && !e.ctrlKey) window.close();
+    void openPr(pr, clickBehavior, e.metaKey || e.ctrlKey);
   };
   const unread = !pr.isReadByCurrentUser;
   // null（不正日時 or 想定外形式）のときはセパレータごと非表示にする

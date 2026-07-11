@@ -60,6 +60,10 @@
   "keepEmptyGroupsHint": {
     "message": "グループが空になると、Inbox Zeroページ（この拡張機能のWebサイト）をプレースホルダータブとして開き、グループの位置を保ちます。"
   },
+  "clickBehaviorLabel": { "message": "PR行クリック時の動作" },
+  "clickBehavior_newTab": { "message": "新しいタブで開く" },
+  "clickBehavior_reuseSynced": { "message": "同期済みタブがあればそれを表示" },
+  "clickBehavior_background": { "message": "バックグラウンドで開く" },
   "showHint": { "message": "この設定の説明を表示" },
   "inboxHeader": { "message": "Inbox（ポップアップ）" },
   "inboxSectionsHeader": { "message": "セクション" },
