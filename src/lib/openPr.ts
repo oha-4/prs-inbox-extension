@@ -12,13 +12,32 @@ export function findSyncedTab(ownedTabs: OwnedTab[], prUrl: string): OwnedTab | 
   return ownedTabs.find((t) => isSamePr(t.prUrl, prUrl));
 }
 
+/** クリック時の修飾キー / マウスボタン。副作用側が MouseEvent から詰める */
+export interface ClickModifiers {
+  /** metaKey（macOS の Cmd） */
+  meta: boolean;
+  /** ctrlKey */
+  ctrl: boolean;
+  /** shiftKey */
+  shift: boolean;
+  /** 中クリック（マウス中ボタン / button === 1） */
+  middle: boolean;
+}
+
 /**
- * クリック挙動設定と修飾キー押下から、実際に取る操作を決める。
- * Cmd/Ctrl 修飾クリックは常に 'background'（ブラウザ慣習、設定より優先）。
- * 非修飾時は behavior をマップ（newTab → foreground）。
+ * クリック挙動設定と修飾キー / マウスボタンから、実際に取る操作を決める。
+ * - Shift: `null` を返す＝**インターセプトしない**。呼び出し側は preventDefault せず、
+ *   アンカーの href によるブラウザ標準の「新規ウィンドウで開く」に委ねる。
+ * - 中クリック / Cmd/Ctrl+クリック: 常に 'background'（ブラウザ慣習、設定より優先）。
+ *   ネイティブと見た目は同じでもコード経路を統一し、将来の挙動変更に追従させる。
+ * - 非修飾: behavior をマップ（newTab → foreground）。
  */
-export function resolveClickAction(behavior: ClickBehavior, modified: boolean): ClickAction {
-  if (modified) return 'background';
+export function resolveClickAction(
+  behavior: ClickBehavior,
+  mods: ClickModifiers,
+): ClickAction | null {
+  if (mods.shift) return null;
+  if (mods.middle || mods.meta || mods.ctrl) return 'background';
   switch (behavior) {
     case 'reuseSynced':
       return 'reuseSynced';

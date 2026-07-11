@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { ClickModifiers } from '../src/lib/openPr';
 import { findSyncedTab, resolveClickAction } from '../src/lib/openPr';
 import type { OwnedTab } from '../src/types';
+
+const noMods: ClickModifiers = { meta: false, ctrl: false, shift: false, middle: false };
 
 function tab(tabId: number, prUrl: string): OwnedTab {
   return { tabId, prId: `pr-${tabId}`, prUrl, groupId: 'g1' };
@@ -41,14 +44,31 @@ describe('findSyncedTab', () => {
 
 describe('resolveClickAction', () => {
   it('maps each behavior to its action when unmodified', () => {
-    expect(resolveClickAction('newTab', false)).toBe('foreground');
-    expect(resolveClickAction('reuseSynced', false)).toBe('reuseSynced');
-    expect(resolveClickAction('background', false)).toBe('background');
+    expect(resolveClickAction('newTab', noMods)).toBe('foreground');
+    expect(resolveClickAction('reuseSynced', noMods)).toBe('reuseSynced');
+    expect(resolveClickAction('background', noMods)).toBe('background');
   });
 
-  it('always opens in the background on a modified (Cmd/Ctrl) click', () => {
-    expect(resolveClickAction('newTab', true)).toBe('background');
-    expect(resolveClickAction('reuseSynced', true)).toBe('background');
-    expect(resolveClickAction('background', true)).toBe('background');
+  it('always opens in the background on a Cmd/Ctrl click', () => {
+    expect(resolveClickAction('newTab', { ...noMods, meta: true })).toBe('background');
+    expect(resolveClickAction('reuseSynced', { ...noMods, ctrl: true })).toBe('background');
+    expect(resolveClickAction('background', { ...noMods, meta: true })).toBe('background');
+  });
+
+  it('always opens in the background on a middle-click (unified with Cmd/Ctrl path)', () => {
+    expect(resolveClickAction('newTab', { ...noMods, middle: true })).toBe('background');
+    expect(resolveClickAction('reuseSynced', { ...noMods, middle: true })).toBe('background');
+    expect(resolveClickAction('background', { ...noMods, middle: true })).toBe('background');
+  });
+
+  it('returns null on Shift so the caller leaves the native new-window action alone', () => {
+    expect(resolveClickAction('newTab', { ...noMods, shift: true })).toBeNull();
+    expect(resolveClickAction('reuseSynced', { ...noMods, shift: true })).toBeNull();
+    expect(resolveClickAction('background', { ...noMods, shift: true })).toBeNull();
+  });
+
+  it('lets Shift win over Cmd/Ctrl and middle-click (never intercepts a Shift click)', () => {
+    expect(resolveClickAction('background', { ...noMods, shift: true, meta: true })).toBeNull();
+    expect(resolveClickAction('background', { ...noMods, shift: true, middle: true })).toBeNull();
   });
 });
