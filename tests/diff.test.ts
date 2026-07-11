@@ -424,6 +424,53 @@ describe('forceExtraCloses', () => {
     expect(closes).toEqual([]);
   });
 
+  it('closes a duplicate of a desired PR, keeping exactly one', () => {
+    const closes = forceExtraCloses(
+      [
+        managed(1, 'https://github.com/acme/widgets/pull/1'),
+        managed(2, 'https://github.com/acme/widgets/pull/1/files'), // same PR, another tab
+      ],
+      [desired('1')],
+    );
+    expect(closes).toEqual([2]);
+  });
+
+  it('keeps one tab per desired PR when several are duplicated', () => {
+    const closes = forceExtraCloses(
+      [
+        managed(1, 'https://github.com/acme/widgets/pull/1'),
+        managed(2, 'https://github.com/acme/widgets/pull/1'),
+        managed(3, 'https://github.com/acme/widgets/pull/2'),
+        managed(4, 'https://github.com/acme/widgets/pull/2'),
+        managed(5, 'https://github.com/acme/widgets/pull/2'),
+      ],
+      [desired('1'), desired('2')],
+    );
+    expect(closes.sort((a, b) => a - b)).toEqual([2, 4, 5]);
+  });
+
+  it('does not treat the same PR in two different groups as a duplicate', () => {
+    const closes = forceExtraCloses(
+      [
+        managed(1, 'https://github.com/acme/widgets/pull/1', 'gA'),
+        managed(2, 'https://github.com/acme/widgets/pull/1', 'gB'),
+      ],
+      [desired('1', { groupId: 'gA' }), desired('1', { groupId: 'gB' })],
+    );
+    expect(closes).toEqual([]);
+  });
+
+  it('closes duplicate placeholder tabs, keeping one', () => {
+    const closes = forceExtraCloses(
+      [
+        managed(1, makePlaceholderUrl('g1', 'Needs review')),
+        managed(2, makePlaceholderUrl('g1', 'Needs review')),
+      ],
+      [placeholderDesired()],
+    );
+    expect(closes).toEqual([2]);
+  });
+
   it('keeps a desired placeholder tab', () => {
     const closes = forceExtraCloses(
       [managed(1, makePlaceholderUrl('g1', 'Needs review'))],
