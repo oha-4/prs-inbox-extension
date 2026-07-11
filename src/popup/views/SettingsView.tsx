@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ArrowDownUp,
   Bell,
@@ -55,6 +55,7 @@ import {
   orderedInboxSections,
   SORT_KEYS,
 } from '../../lib/settings';
+import { shouldSyncDraft } from '../../lib/debouncedDraft';
 import { isNearQuota } from '../../lib/settingsSave';
 import { sendMessage } from '../../messages';
 import { cn } from '@/lib/utils';
@@ -843,6 +844,37 @@ function parseList(text: string): string[] {
     .filter((l) => l.length > 0);
 }
 
+/**
+ * blur時にのみ保存する draft を保持しつつ、外部（別ウィンドウ / options ページの
+ * `chrome.storage.onChanged`）由来の value 変化に追従させるフック（issue #75）。
+ * 入力中（フォーカス中）の draft は破壊しないよう、非フォーカス時のみリセットする。
+ * render 中に「前回 value」と比較して state を調整する React 公式パターン。
+ */
+function useDebouncedDraft<T extends HTMLElement>(
+  value: string,
+): {
+  ref: React.RefObject<T | null>;
+  draft: string;
+  setDraft: (v: string) => void;
+} {
+  const ref = useRef<T>(null);
+  const [draft, setDraft] = useState(value);
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    if (
+      shouldSyncDraft({
+        prevValue: lastValue,
+        nextValue: value,
+        isFocused: ref.current !== null && ref.current === document.activeElement,
+      })
+    ) {
+      setDraft(value);
+    }
+  }
+  return { ref, draft, setDraft };
+}
+
 /** storage.sync の書き込みクォータ対策: blur時にのみ保存するテキスト入力 */
 function DebouncedText(props: {
   value: string;
@@ -850,9 +882,10 @@ function DebouncedText(props: {
   className?: string;
   onCommit: (v: string) => void;
 }): React.JSX.Element {
-  const [draft, setDraft] = useState(props.value);
+  const { ref, draft, setDraft } = useDebouncedDraft<HTMLInputElement>(props.value);
   return (
     <Input
+      ref={ref}
       type="text"
       className={cn('h-7 text-xs', props.className)}
       value={draft}
@@ -869,9 +902,10 @@ function DebouncedTextarea(props: {
   value: string;
   onCommit: (v: string) => void;
 }): React.JSX.Element {
-  const [draft, setDraft] = useState(props.value);
+  const { ref, draft, setDraft } = useDebouncedDraft<HTMLTextAreaElement>(props.value);
   return (
     <Textarea
+      ref={ref}
       rows={3}
       value={draft}
       placeholder={t('filterPlaceholder')}
