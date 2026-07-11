@@ -21,6 +21,9 @@
   "relYear": { "message": "$N$ yr", "placeholders": { "n": { "content": "$1" } } },
   "timeNow": { "message": "now" },
   "inboxEmpty": { "message": "Your inbox is empty 🎉" },
+  "allSectionsHidden": {
+    "message": "All sections are hidden. Choose which sections to show in settings."
+  },
   "truncated": { "message": "truncated at 100" },
   "notLoggedIn": { "message": "You are not logged in to GitHub." },
   "logIn": { "message": "Log in" },

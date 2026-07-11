@@ -53,12 +53,14 @@ export function App(): React.JSX.Element {
   const [view, setView] = useState<'list' | 'settings'>('list');
   useTick(1000);
 
-  const sections = useMemo(() => {
-    if (!snapshot || !settings) return [];
+  const { sections, allHidden } = useMemo(() => {
+    if (!snapshot || !settings) return { sections: [], allHidden: false };
     const filtered = filterSections(snapshot.sections, settings.allowlist, settings.blocklist);
-    return [...filtered]
+    const visible = [...filtered]
       .filter((s) => !isSectionHidden(s.id, settings))
       .sort((a, b) => inboxOrderIndex(a.id, settings) - inboxOrderIndex(b.id, settings));
+    // 表示対象が0件なのは、フィルタ後のセクションが全て非表示指定だから — という状況だけを検出する
+    return { sections: visible, allHidden: filtered.length > 0 && visible.length === 0 };
   }, [snapshot, settings]);
 
   return (
@@ -121,7 +123,12 @@ export function App(): React.JSX.Element {
           {snapshot === null ? (
             <LoadingSkeleton />
           ) : (
-            <SectionList sections={sections} clickBehavior={settings?.clickBehavior ?? 'newTab'} />
+            <SectionList
+              sections={sections}
+              clickBehavior={settings?.clickBehavior ?? 'newTab'}
+              allHidden={allHidden}
+              onOpenSettings={() => setView('settings')}
+            />
           )}
         </>
       )}
