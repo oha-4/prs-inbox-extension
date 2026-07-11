@@ -34,3 +34,13 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             --generate-notes \
             "prs-inbox-extension-${GITHUB_REF_NAME}.zip"
+      # 公開はせずドラフト保存（dev）まで。手動で審査提出/公開する運用。
+      - name: Upload to Chrome Web Store (draft, no publish)
+        uses: mnao305/chrome-extension-upload@fdfe79400af990f5145a319e834aee64907ccff4 # v6.0.0
+        with:
+          file-path: prs-inbox-extension-${{ github.ref_name }}.zip
+          extension-id: fmghddbkgblnhhgckmkcefehnmooojjf
+          client-id: ${{ secrets.CWS_CLIENT_ID }}
+          client-secret: ${{ secrets.CWS_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CWS_REFRESH_TOKEN }}
+          publish: false
