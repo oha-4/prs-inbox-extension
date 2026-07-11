@@ -14,6 +14,7 @@ import {
   Info,
   ListFilter,
   Loader2,
+  MousePointerClick,
   Plus,
   Trash2,
   TriangleAlert,
@@ -150,6 +151,26 @@ export function SettingsView({ settings, update, saveError }: Props): React.JSX.
           <SubHeader icon={Eye}>{t('inboxSectionsHeader')}</SubHeader>
           <p className="text-muted-foreground text-[11px]">{t('inboxSectionsHint')}</p>
           <InboxSectionList settings={settings} update={update} />
+        </div>
+        <div className="space-y-2">
+          <SubHeader icon={MousePointerClick}>{t('clickBehaviorLabel')}</SubHeader>
+          <Select
+            value={settings.clickBehavior}
+            onValueChange={(v) =>
+              update((s) => ({ ...s, clickBehavior: v as SettingsType['clickBehavior'] }))
+            }
+          >
+            <SelectTrigger size="sm" className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CLICK_BEHAVIORS.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {t(`clickBehavior_${v}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <SubHeader icon={Bell}>{t('badgeHeader')}</SubHeader>
@@ -295,26 +316,6 @@ export function SettingsView({ settings, update, saveError }: Props): React.JSX.
             </label>
             <HintPopover text={t('keepEmptyGroupsHint')} />
           </div>
-          <label className="flex items-center justify-between gap-2 text-[13px]">
-            {t('clickBehaviorLabel')}
-            <Select
-              value={settings.clickBehavior}
-              onValueChange={(v) =>
-                update((s) => ({ ...s, clickBehavior: v as SettingsType['clickBehavior'] }))
-              }
-            >
-              <SelectTrigger size="sm" className="w-44">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CLICK_BEHAVIORS.map((v) => (
-                  <SelectItem key={v} value={v}>
-                    {t(`clickBehavior_${v}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
         </div>
         <ForceAlignButton />
       </section>
