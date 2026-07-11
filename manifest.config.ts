@@ -1,9 +1,11 @@
 import { defineManifest } from '@crxjs/vite-plugin';
+import packageJson from './package.json' with { type: 'json' };
 
 export default defineManifest({
   manifest_version: 3,
   name: '__MSG_extName__',
-  version: '1.0.0',
+  // 単一ソース: package.json。リリースは `npm version <bump>` → タグ push（release.yml が整合を検証）
+  version: packageJson.version,
   description: '__MSG_extDescription__',
   default_locale: 'en',
   icons: {

@@ -11,6 +11,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "types": ["chrome", "vite/client", "node"],

@@ -28,6 +28,11 @@ CI (`.github/workflows/ci.yml`): biome / vitest+codecov / pinact (actions must b
 SHA-pinned, releases ≥7 days old — see `.github/pinact.yml`). Tag `v*` pushes
 build and attach the extension zip to a GitHub Release (`release.yml`).
 
+**Releasing**: the version lives only in `package.json` (`manifest.config.ts`
+imports it; `release.yml` fails if the tag disagrees). On main:
+`npm version <major|minor|patch>` (updates package.json, commits, tags) then
+`git push origin main --follow-tags`.
+
 Load the unpacked `dist/` at `chrome://extensions` (developer mode). Tab-group /
 tab manipulation can only be verified in a real browser with a logged-in
 github.com session — tests don't cover it.
