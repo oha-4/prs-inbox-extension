@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, RefreshCw, Settings } from 'lucide-react';
 import { filterSections } from '../lib/filters';
-import { t } from '../lib/i18n';
+import { localizeRelative, t } from '../lib/i18n';
 import { inboxOrderIndex, isSectionHidden } from '../lib/settings';
 import { formatRelative } from '../lib/time';
 import { cn } from '@/lib/utils';
@@ -13,27 +13,11 @@ import { useSettings } from './hooks/useSettings';
 import { useSnapshot } from './hooks/useSnapshot';
 import { SettingsView } from './views/SettingsView';
 
-const REL_UNIT_KEY: Record<string, string> = {
-  m: 'relMin',
-  h: 'relHour',
-  d: 'relDay',
-  mo: 'relMonth',
-  y: 'relYear',
-};
-
-/** ヘッダー用: 短縮形(4m)を単位付き(4分 / 4 min)にローカライズ。各PR行は短縮形のまま */
-function localizeRelative(short: string): string {
-  const m = /^(\d+)(mo|m|h|d|y)$/.exec(short);
-  if (!m) return short;
-  const key = REL_UNIT_KEY[m[2]!];
-  return key ? t(key, m[1]!) : short;
-}
-
 function fetchedLabel(fetchedAt: number): string {
   const diff = Date.now() - fetchedAt;
   if (diff < 10_000) return t('updatedJustNow');
   if (diff < 60_000) return t('updatedWithinMinute');
-  return t('updatedAgo', localizeRelative(formatRelative(new Date(fetchedAt).toISOString())));
+  return t('updatedAgo', localizeRelative(formatRelative(new Date(fetchedAt).toISOString())) ?? '');
 }
 
 /** ポップアップを開いている間、相対時刻を毎秒生かす */

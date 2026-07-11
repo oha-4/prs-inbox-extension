@@ -18,6 +18,7 @@
   "relDay": { "message": "$N$日", "placeholders": { "n": { "content": "$1" } } },
   "relMonth": { "message": "$N$ヶ月", "placeholders": { "n": { "content": "$1" } } },
   "relYear": { "message": "$N$年", "placeholders": { "n": { "content": "$1" } } },
+  "timeNow": { "message": "たった今" },
   "inboxEmpty": { "message": "Inboxは空です 🎉" },
   "truncated": { "message": "100件で打ち切り" },
   "notLoggedIn": { "message": "GitHubにログインしていません。" },

@@ -1,5 +1,6 @@
 import { MessageSquare } from 'lucide-react';
 import type { PullRequest } from '../../types';
+import { localizeRelative } from '../../lib/i18n';
 import { formatRelative } from '../../lib/time';
 import { cn } from '@/lib/utils';
 import { StateIcon } from './StateIcon';
@@ -11,6 +12,8 @@ export function PrRow({ pr }: { pr: PullRequest }): React.JSX.Element {
     if (!e.metaKey && !e.ctrlKey) window.close();
   };
   const unread = !pr.isReadByCurrentUser;
+  // null（不正日時 or 想定外形式）のときはセパレータごと非表示にする
+  const relTime = pr.updatedAt ? localizeRelative(formatRelative(pr.updatedAt)) : null;
   return (
     <a
       className={cn(
@@ -52,10 +55,10 @@ export function PrRow({ pr }: { pr: PullRequest }): React.JSX.Element {
               <span className="truncate">{pr.authorLogin}</span>
             </>
           )}
-          {pr.updatedAt && (
+          {relTime && (
             <>
               <span className="opacity-40">·</span>
-              <span>{formatRelative(pr.updatedAt)}</span>
+              <span>{relTime}</span>
             </>
           )}
         </span>

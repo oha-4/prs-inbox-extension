@@ -18,6 +18,7 @@
   "relDay": { "message": "$N$ d", "placeholders": { "n": { "content": "$1" } } },
   "relMonth": { "message": "$N$ mo", "placeholders": { "n": { "content": "$1" } } },
   "relYear": { "message": "$N$ yr", "placeholders": { "n": { "content": "$1" } } },
+  "timeNow": { "message": "now" },
   "inboxEmpty": { "message": "Your inbox is empty 🎉" },
   "truncated": { "message": "truncated at 100" },
   "notLoggedIn": { "message": "You are not logged in to GitHub." },
