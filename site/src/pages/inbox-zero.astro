@@ -39,7 +39,9 @@ const favicon = `${base}/favicon.png`;
         const sub = document.getElementById('sub');
         const render = () => {
           const group = new URLSearchParams(location.hash.slice(1)).get('group');
-          document.title = group ? `Inbox Zero 🎉 — ${group}` : 'Inbox Zero 🎉';
+          // タブはグループ名ラベル付きのタブグループ直下に置かれるため、
+          // title へグループ名を足すと重複する。title は固定にする。
+          document.title = 'Inbox Zero 🎉';
           if (group) {
             msg.textContent = ja
               ? `${group} に該当するPRはありません 🎉`
