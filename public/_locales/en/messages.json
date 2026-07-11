@@ -85,6 +85,15 @@
   "allowlistLabel": { "message": "Allowlist (empty = show everything)" },
   "blocklistLabel": { "message": "Blocklist" },
   "filterPlaceholder": { "message": "e.g.\nmy-org\nmy-org/some-repo" },
+  "saveErrorQuota": {
+    "message": "Couldn't save your settings — the allowlist/blocklist may be too large. Chrome limits synced settings to about 8 KB. The display was reverted to the last saved values; try shortening the lists."
+  },
+  "saveErrorGeneric": {
+    "message": "Couldn't save your settings. The display was reverted to the last saved values."
+  },
+  "saveWarnNearQuota": {
+    "message": "Your settings are close to Chrome's ~8 KB sync limit. Further additions to the allowlist/blocklist may fail to save."
+  },
   "debugHeader": { "message": "Debug" },
   "debugModeLabel": { "message": "Debug mode (save raw responses when parsing fails)" },
   "dumpButton": { "message": "Dump raw responses for all sections" },

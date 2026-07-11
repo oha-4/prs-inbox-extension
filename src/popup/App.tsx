@@ -65,7 +65,7 @@ function LoadingSkeleton(): React.JSX.Element {
 
 export function App(): React.JSX.Element {
   const { snapshot, refreshing, refresh } = useSnapshot();
-  const { settings, update } = useSettings();
+  const { settings, update, saveError } = useSettings();
   const [view, setView] = useState<'list' | 'settings'>('list');
   useTick(1000);
 
@@ -125,7 +125,7 @@ export function App(): React.JSX.Element {
       </header>
 
       {view === 'settings' && settings ? (
-        <SettingsView settings={settings} update={update} />
+        <SettingsView settings={settings} update={update} saveError={saveError} />
       ) : (
         <>
           {snapshot && <ErrorBanner snapshot={snapshot} />}
