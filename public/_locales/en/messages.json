@@ -26,9 +26,28 @@
   "fetchFailed": { "message": "Failed to fetch" },
   "tabGroupSyncHeader": { "message": "Tab group sync" },
   "tabGroupSyncHint": {
-    "message": "PRs in enabled sections are synced to tab groups. Sections sharing a group name are merged into one group."
+    "message": "Create tab groups and add sections to each one. Tabs follow the section order unless a sort is set. A PR in several added sections gets one tab per group."
   },
   "groupNamePlaceholder": { "message": "Group name" },
+  "addGroup": { "message": "Add group" },
+  "deleteGroup": { "message": "Delete group" },
+  "addSection": { "message": "Add section" },
+  "removeSection": { "message": "Remove section" },
+  "moveUp": { "message": "Move up" },
+  "moveDown": { "message": "Move down" },
+  "groupNoSectionsHint": { "message": "Add at least one section to sync this group." },
+  "groupNameEmptyHint": { "message": "Name this group to start syncing it." },
+  "groupNameDuplicateHint": {
+    "message": "Another group has the same name; Chrome groups are matched by title, so keep names unique."
+  },
+  "customSectionHeader": { "message": "Custom sections" },
+  "customSectionHint": {
+    "message": "Fetched with GitHub search syntax and shown as extra sections. Invalid queries show up as fetch errors."
+  },
+  "addCustomSection": { "message": "Add custom section" },
+  "deleteCustomSection": { "message": "Delete custom section" },
+  "customSectionNamePlaceholder": { "message": "Name" },
+  "customSectionQueryPlaceholder": { "message": "e.g. org:my-org label:urgent" },
   "autoCloseLabel": { "message": "Automatically close tabs for PRs that left the inbox" },
   "badgeHeader": { "message": "Toolbar badge" },
   "badgeEnabledLabel": { "message": "Show the count badge on the toolbar icon" },

@@ -1,7 +1,21 @@
-import type { SectionId, SectionSyncConfig, Settings, SortCriterion, SortKey } from '../types';
+import type {
+  CustomSection,
+  SectionId,
+  Settings,
+  SortCriterion,
+  SortKey,
+  SyncGroup,
+} from '../types';
 
 export const SORT_KEYS: SortKey[] = ['repo', 'created', 'updated'];
 export const MAX_SORT_CRITERIA = 2;
+
+/** storage.sync の 8KB/item 制限に対する防御（エラーではなく黙って切り詰める） */
+export const MAX_SYNC_GROUPS = 20;
+export const MAX_CUSTOM_SECTIONS = 20;
+
+/** 既知/将来の GitHub スラッグと衝突しないための必須プレフィックス */
+export const CUSTOM_SECTION_PREFIX = 'custom:';
 
 /** 既定: repo順 → 作成が古い順 */
 const DEFAULT_SORT: SortCriterion[] = [
@@ -21,18 +35,7 @@ export const KNOWN_SECTIONS: { id: SectionId; label: string }[] = [
 
 export const SECTION_ORDER: SectionId[] = KNOWN_SECTIONS.map((s) => s.id);
 
-function defaultSectionConfig(id: SectionId, label: string): SectionSyncConfig {
-  return {
-    enabled: id === 'review-requested',
-    label,
-    groupName: 'Needs review',
-    groupColor: 'yellow',
-  };
-}
-
 export function defaultSettings(): Settings {
-  const sections: Record<SectionId, SectionSyncConfig> = {};
-  for (const s of KNOWN_SECTIONS) sections[s.id] = defaultSectionConfig(s.id, s.label);
   return {
     pollIntervalMinutes: 5,
     maxPrAge: '1m',
@@ -42,11 +45,49 @@ export function defaultSettings(): Settings {
     sortCriteria: DEFAULT_SORT.map((c) => ({ ...c })),
     forceAlignOnRefresh: false,
     keepEmptyGroups: false,
-    sections,
+    // id は固定文字列。ここで randomUUID() を呼ぶと読み込みごとに別IDになり
+    // 所有権（SyncState.groups のキー）が壊れる。
+    syncGroups: [{ id: 'default', name: 'Needs review', sectionIds: ['review-requested'] }],
+    customSections: [],
     allowlist: [],
     blocklist: [],
     debugMode: false,
   };
+}
+
+/** popup 表示・グループ割当 UI 用のセクション一覧（既知セクション → custom の正準順） */
+export function listSections(settings: Settings): { id: string; label: string }[] {
+  return [
+    ...KNOWN_SECTIONS.map((s) => ({ id: s.id, label: s.label })),
+    ...settings.customSections.map((ci) => ({ id: ci.id, label: ci.name.trim() || ci.query })),
+  ];
+}
+
+/** poll が叩く対象。custom は query が filter になる（空 query は除外） */
+export function pollTargets(settings: Settings): { id: string; label: string; filter: string }[] {
+  return [
+    ...KNOWN_SECTIONS.map((s) => ({ id: s.id, label: s.label, filter: s.id })),
+    ...settings.customSections
+      .filter((ci) => ci.query.trim().length > 0)
+      .map((ci) => ({ id: ci.id, label: ci.name.trim() || ci.query, filter: ci.query })),
+  ];
+}
+
+/** snapshot セクションの表示順: 既知 → SECTION_ORDER 順、custom → 定義順、未知 → 末尾 */
+export function sectionOrderIndex(id: string, settings: Settings): number {
+  const known = SECTION_ORDER.indexOf(id);
+  if (known !== -1) return known;
+  const custom = settings.customSections.findIndex((ci) => ci.id === id);
+  if (custom !== -1) return SECTION_ORDER.length + custom;
+  return SECTION_ORDER.length + settings.customSections.length;
+}
+
+/**
+ * 同期対象のグループ。name が空だと tabGroups.query({title: ''}) が
+ * ユーザーの無題グループを誤採用するため、name 非空 && sectionIds 非空のみ。
+ */
+export function activeSyncGroups(settings: Settings): SyncGroup[] {
+  return settings.syncGroups.filter((g) => g.name.trim().length > 0 && g.sectionIds.length > 0);
 }
 
 /** storage から読んだ部分的な設定をデフォルトとマージ（スキーマ進化に耐える） */
@@ -54,7 +95,7 @@ export function mergeSettings(stored: unknown): Settings {
   const base = defaultSettings();
   if (typeof stored !== 'object' || stored === null) return base;
   const s = stored as Partial<Settings>;
-  const merged: Settings = {
+  return {
     ...base,
     ...(typeof s.pollIntervalMinutes === 'number' && s.pollIntervalMinutes >= 1
       ? { pollIntervalMinutes: s.pollIntervalMinutes }
@@ -70,30 +111,66 @@ export function mergeSettings(stored: unknown): Settings {
       : {}),
     ...(typeof s.keepEmptyGroups === 'boolean' ? { keepEmptyGroups: s.keepEmptyGroups } : {}),
     ...(Array.isArray(s.sortCriteria) ? { sortCriteria: sanitizeSort(s.sortCriteria) } : {}),
+    ...(Array.isArray(s.syncGroups) ? { syncGroups: sanitizeSyncGroups(s.syncGroups) } : {}),
+    ...(Array.isArray(s.customSections)
+      ? { customSections: sanitizeCustomSections(s.customSections) }
+      : {}),
     ...(Array.isArray(s.allowlist) ? { allowlist: s.allowlist.filter(isNonEmptyString) } : {}),
     ...(Array.isArray(s.blocklist) ? { blocklist: s.blocklist.filter(isNonEmptyString) } : {}),
     ...(typeof s.debugMode === 'boolean' ? { debugMode: s.debugMode } : {}),
-    sections: { ...base.sections },
   };
-  if (typeof s.sections === 'object' && s.sections !== null) {
-    for (const [id, cfg] of Object.entries(s.sections)) {
-      const baseCfg = merged.sections[id] ?? defaultSectionConfig(id, id);
-      if (typeof cfg !== 'object' || cfg === null) continue;
-      merged.sections[id] = {
-        enabled: typeof cfg.enabled === 'boolean' ? cfg.enabled : baseCfg.enabled,
-        label: isNonEmptyString(cfg.label) ? cfg.label : baseCfg.label,
-        groupName: isNonEmptyString(cfg.groupName) ? cfg.groupName : baseCfg.groupName,
-        groupColor: isNonEmptyString(cfg.groupColor)
-          ? (cfg.groupColor as SectionSyncConfig['groupColor'])
-          : baseCfg.groupColor,
-      };
-    }
-  }
-  return merged;
 }
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === 'string' && v.trim().length > 0;
+}
+
+/**
+ * 同期グループの検証。id 無しは skip（ここで再生成するとマージが非決定的になる）。
+ * name は空を許容する（編集途中の状態がリロードで消えないように）。
+ * 未知の sectionId は残す — 同期時に不活性なだけで、UI の削除ハンドラが参照掃除を担う。
+ */
+function sanitizeSyncGroups(raw: unknown[]): SyncGroup[] {
+  const seen = new Set<string>();
+  const out: SyncGroup[] = [];
+  for (const item of raw) {
+    if (out.length >= MAX_SYNC_GROUPS) break;
+    if (typeof item !== 'object' || item === null) continue;
+    const g = item as Partial<SyncGroup>;
+    if (!isNonEmptyString(g.id) || seen.has(g.id)) continue;
+    seen.add(g.id);
+    const sectionSeen = new Set<string>();
+    const sectionIds = (Array.isArray(g.sectionIds) ? g.sectionIds : []).filter(
+      (id): id is string => {
+        if (!isNonEmptyString(id) || sectionSeen.has(id)) return false;
+        sectionSeen.add(id);
+        return true;
+      },
+    );
+    out.push({ id: g.id, name: typeof g.name === 'string' ? g.name.trim() : '', sectionIds });
+  }
+  return out;
+}
+
+/** カスタムセクションの検証。id は CUSTOM_SECTION_PREFIX 必須。name/query は空を許容 */
+function sanitizeCustomSections(raw: unknown[]): CustomSection[] {
+  const seen = new Set<string>();
+  const out: CustomSection[] = [];
+  for (const item of raw) {
+    if (out.length >= MAX_CUSTOM_SECTIONS) break;
+    if (typeof item !== 'object' || item === null) continue;
+    const ci = item as Partial<CustomSection>;
+    if (!isNonEmptyString(ci.id) || !ci.id.startsWith(CUSTOM_SECTION_PREFIX) || seen.has(ci.id)) {
+      continue;
+    }
+    seen.add(ci.id);
+    out.push({
+      id: ci.id,
+      name: typeof ci.name === 'string' ? ci.name.trim() : '',
+      query: typeof ci.query === 'string' ? ci.query.trim() : '',
+    });
+  }
+  return out;
 }
 
 /** 保存済みソート設定を検証（未知キー・重複・不正方向を除去、最大2段） */

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, RefreshCw, Settings } from 'lucide-react';
 import { filterSections } from '../lib/filters';
 import { t } from '../lib/i18n';
-import { SECTION_ORDER } from '../lib/settings';
+import { sectionOrderIndex } from '../lib/settings';
 import { formatRelative } from '../lib/time';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,9 @@ export function App(): React.JSX.Element {
   const sections = useMemo(() => {
     if (!snapshot || !settings) return [];
     const filtered = filterSections(snapshot.sections, settings.allowlist, settings.blocklist);
-    return [...filtered].sort((a, b) => SECTION_ORDER.indexOf(a.id) - SECTION_ORDER.indexOf(b.id));
+    return [...filtered].sort(
+      (a, b) => sectionOrderIndex(a.id, settings) - sectionOrderIndex(b.id, settings),
+    );
   }, [snapshot, settings]);
 
   return (

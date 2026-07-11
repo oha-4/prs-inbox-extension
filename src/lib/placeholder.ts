@@ -3,8 +3,9 @@ import { prUrlKey } from './prUrl';
 /**
  * keepEmptyGroups 用プレースホルダタブ。
  * 空になったタブグループに GitHub Pages の Inbox Zero ページを1枚置いて
- * グループの消滅（＝位置の喪失）を防ぐ。グループ名は URL フラグメントで
- * 渡すため、サーバー（Pages/CDN）には一切送信されない。
+ * グループの消滅（＝位置の喪失）を防ぐ。安定グループ ID（SyncGroup.id）は
+ * URL フラグメントの gid で渡し、表示用のグループ名は group で併記する。
+ * いずれも URL フラグメントなので、サーバー（Pages/CDN）には一切送信されない。
  * chrome-extension:// ページではなくリモート URL なのは意図的:
  * 拡張のリロード/更新は内部ページのタブを強制クローズし、グループが道連れに消えるため。
  */
@@ -14,13 +15,13 @@ const PLACEHOLDER_ID_PREFIX = 'placeholder:';
 
 export const PLACEHOLDER_URL_BASE = `${PLACEHOLDER_ORIGIN}${PLACEHOLDER_PATH}`;
 
-export function makePlaceholderUrl(groupName: string): string {
-  return `${PLACEHOLDER_URL_BASE}#group=${encodeURIComponent(groupName)}`;
+export function makePlaceholderUrl(groupId: string, groupName: string): string {
+  return `${PLACEHOLDER_URL_BASE}#gid=${encodeURIComponent(groupId)}&group=${encodeURIComponent(groupName)}`;
 }
 
-/** GitHub の PR node id と衝突しない疑似 prId（'placeholder:<groupName>'） */
-export function placeholderPrId(groupName: string): string {
-  return `${PLACEHOLDER_ID_PREFIX}${groupName}`;
+/** GitHub の PR node id と衝突しない疑似 prId（'placeholder:<groupId>'） */
+export function placeholderPrId(groupId: string): string {
+  return `${PLACEHOLDER_ID_PREFIX}${groupId}`;
 }
 
 export function isPlaceholderId(prId: string): boolean {
@@ -38,8 +39,10 @@ export function placeholderKey(url: string): string | null {
   if (u.origin !== PLACEHOLDER_ORIGIN) return null;
   const path = u.pathname.endsWith('/') ? u.pathname : `${u.pathname}/`;
   if (path !== PLACEHOLDER_PATH) return null;
-  const group = new URLSearchParams(u.hash.slice(1)).get('group');
-  return group ? placeholderPrId(group) : null;
+  // gid（安定グループ ID）を識別に使う。gid の無い旧形式 URL（#group=... のみ）は
+  // 意図的にプレースホルダ扱いせず（＝外部タブ扱いで）null を返す。
+  const gid = new URLSearchParams(u.hash.slice(1)).get('gid');
+  return gid ? placeholderPrId(gid) : null;
 }
 
 /** タブ同期でのマッチングキー: PR なら prUrlKey、プレースホルダなら placeholderKey */

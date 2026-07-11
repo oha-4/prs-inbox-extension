@@ -26,9 +26,28 @@
   "fetchFailed": { "message": "取得に失敗しました" },
   "tabGroupSyncHeader": { "message": "タブグループ同期" },
   "tabGroupSyncHint": {
-    "message": "有効にしたセクションのPRがタブグループに同期されます。同じグループ名のセクションは1つのグループにまとまります。"
+    "message": "タブグループを作成し、各グループにセクションを追加します。ソート未指定のときはセクションの並び順でタブが並びます。複数グループに追加されたPRはグループごとに1タブ開かれます。"
   },
   "groupNamePlaceholder": { "message": "グループ名" },
+  "addGroup": { "message": "グループを追加" },
+  "deleteGroup": { "message": "グループを削除" },
+  "addSection": { "message": "セクションを追加" },
+  "removeSection": { "message": "セクションを削除" },
+  "moveUp": { "message": "上へ" },
+  "moveDown": { "message": "下へ" },
+  "groupNoSectionsHint": { "message": "同期するセクションを1つ以上追加してください。" },
+  "groupNameEmptyHint": { "message": "グループ名を入力すると同期が始まります。" },
+  "groupNameDuplicateHint": {
+    "message": "同名のグループがあります。Chromeのグループはタイトルで照合されるため、名前は重複させないでください。"
+  },
+  "customSectionHeader": { "message": "カスタムセクション" },
+  "customSectionHint": {
+    "message": "GitHubの検索構文で取得し、セクションとして表示します。無効なクエリは取得エラーになります。"
+  },
+  "addCustomSection": { "message": "カスタムセクションを追加" },
+  "deleteCustomSection": { "message": "カスタムセクションを削除" },
+  "customSectionNamePlaceholder": { "message": "名前" },
+  "customSectionQueryPlaceholder": { "message": "例: org:my-org label:urgent" },
   "autoCloseLabel": { "message": "Inboxから消えたPRのタブを自動で閉じる" },
   "badgeHeader": { "message": "ツールバーバッジ" },
   "badgeEnabledLabel": { "message": "ツールバーアイコンに件数バッジを表示" },

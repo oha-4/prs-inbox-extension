@@ -4,22 +4,32 @@ import {
   Bell,
   Bug,
   Check,
+  ChevronDown,
+  ChevronUp,
   CloudDownload,
   Filter,
   FolderSync,
+  ListFilter,
   Loader2,
   Plus,
+  Trash2,
   X,
   Zap,
 } from 'lucide-react';
-import type { Settings as SettingsType, SortKey, TabGroupColor } from '../../types';
+import type { Settings as SettingsType, SortKey } from '../../types';
 import { t } from '../../lib/i18n';
-import { MAX_SORT_CRITERIA, SECTION_ORDER, SORT_KEYS } from '../../lib/settings';
+import {
+  CUSTOM_SECTION_PREFIX,
+  listSections,
+  MAX_CUSTOM_SECTIONS,
+  MAX_SORT_CRITERIA,
+  MAX_SYNC_GROUPS,
+  SORT_KEYS,
+} from '../../lib/settings';
 import { sendMessage } from '../../messages';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -29,18 +39,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-const GROUP_COLORS: Record<TabGroupColor, string> = {
-  grey: '#5f6368',
-  blue: '#1a73e8',
-  red: '#d93025',
-  yellow: '#f9ab00',
-  green: '#188038',
-  pink: '#d01884',
-  purple: '#a142f4',
-  cyan: '#007b83',
-  orange: '#fa903e',
-};
 
 interface Props {
   settings: SettingsType;
@@ -64,73 +62,96 @@ function SectionHeader({
 }
 
 export function SettingsView({ settings, update }: Props): React.JSX.Element {
-  const sectionIds = [
-    ...SECTION_ORDER,
-    ...Object.keys(settings.sections).filter((id) => !SECTION_ORDER.includes(id)),
-  ];
+  const sections = listSections(settings);
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 space-y-5 overflow-y-auto p-3 duration-200">
       <section className="space-y-2">
         <SectionHeader icon={FolderSync}>{t('tabGroupSyncHeader')}</SectionHeader>
         <p className="text-muted-foreground m-0 text-[11px]">{t('tabGroupSyncHint')}</p>
-        <div className="divide-y rounded-lg border">
-          {sectionIds.map((id) => {
-            const cfg = settings.sections[id];
-            if (!cfg) return null;
+        <div className="space-y-2">
+          {settings.syncGroups.map((g) => {
+            const trimmedName = g.name.trim();
+            const duplicate =
+              trimmedName.length > 0 &&
+              settings.syncGroups.some((o) => o.id !== g.id && o.name.trim() === trimmedName);
             return (
-              <div
-                key={id}
-                className={cn(
-                  'flex min-h-11 items-center justify-between gap-2 px-2.5 py-1.5 transition-opacity',
-                  !cfg.enabled && 'opacity-60',
-                )}
-              >
-                <label className="flex cursor-pointer items-center gap-2 text-[13px]">
-                  <Switch
-                    checked={cfg.enabled}
-                    onCheckedChange={(checked) =>
+              <div key={g.id} className="space-y-2 rounded-lg border p-2.5">
+                <div className="flex items-center gap-1.5">
+                  <DebouncedText
+                    value={g.name}
+                    placeholder={t('groupNamePlaceholder')}
+                    className="flex-1"
+                    onCommit={(v) =>
                       update((s) => ({
                         ...s,
-                        sections: { ...s.sections, [id]: { ...cfg, enabled: checked } },
+                        syncGroups: s.syncGroups.map((x) =>
+                          x.id === g.id ? { ...x, name: v } : x,
+                        ),
                       }))
                     }
                   />
-                  {cfg.label}
-                </label>
-                {cfg.enabled && (
-                  <span className="animate-in fade-in slide-in-from-right-2 flex items-center gap-1.5 duration-200">
-                    <DebouncedText
-                      value={cfg.groupName}
-                      placeholder={t('groupNamePlaceholder')}
-                      onCommit={(v) =>
-                        update((s) => ({
-                          ...s,
-                          sections: {
-                            ...s.sections,
-                            [id]: { ...cfg, groupName: v || cfg.groupName },
-                          },
-                        }))
-                      }
-                    />
-                    <ColorPicker
-                      value={cfg.groupColor}
-                      onChange={(color) =>
-                        update((s) => ({
-                          ...s,
-                          sections: {
-                            ...s.sections,
-                            [id]: { ...cfg, groupColor: color },
-                          },
-                        }))
-                      }
-                    />
-                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 shrink-0"
+                    aria-label={t('deleteGroup')}
+                    onClick={() =>
+                      update((s) => ({
+                        ...s,
+                        syncGroups: s.syncGroups.filter((x) => x.id !== g.id),
+                      }))
+                    }
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
+                <GroupSectionList
+                  sectionIds={g.sectionIds}
+                  sections={sections}
+                  onChange={(next) =>
+                    update((s) => ({
+                      ...s,
+                      syncGroups: s.syncGroups.map((x) =>
+                        x.id === g.id ? { ...x, sectionIds: next } : x,
+                      ),
+                    }))
+                  }
+                />
+                {trimmedName.length === 0 && (
+                  <p className="m-0 text-[11px] text-amber-600 dark:text-amber-500">
+                    {t('groupNameEmptyHint')}
+                  </p>
+                )}
+                {g.sectionIds.length === 0 && (
+                  <p className="m-0 text-[11px] text-amber-600 dark:text-amber-500">
+                    {t('groupNoSectionsHint')}
+                  </p>
+                )}
+                {duplicate && (
+                  <p className="m-0 text-[11px] text-amber-600 dark:text-amber-500">
+                    {t('groupNameDuplicateHint')}
+                  </p>
                 )}
               </div>
             );
           })}
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground h-7 gap-1 px-2 text-[11px]"
+          disabled={settings.syncGroups.length >= MAX_SYNC_GROUPS}
+          onClick={() =>
+            update((s) => ({
+              ...s,
+              syncGroups: [...s.syncGroups, { id: crypto.randomUUID(), name: '', sectionIds: [] }],
+            }))
+          }
+        >
+          <Plus className="size-3" />
+          {t('addGroup')}
+        </Button>
         <label className="flex cursor-pointer items-center gap-2 text-[13px]">
           <Switch
             checked={settings.autoCloseRemoved}
@@ -158,6 +179,78 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
           </p>
         )}
         <ForceAlignButton />
+      </section>
+
+      <section className="space-y-2">
+        <SectionHeader icon={ListFilter}>{t('customSectionHeader')}</SectionHeader>
+        <p className="text-muted-foreground m-0 text-[11px]">{t('customSectionHint')}</p>
+        {settings.customSections.map((ci) => (
+          <div key={ci.id} className="flex items-center gap-1.5">
+            <DebouncedText
+              value={ci.name}
+              placeholder={t('customSectionNamePlaceholder')}
+              className="w-24"
+              onCommit={(v) =>
+                update((s) => ({
+                  ...s,
+                  customSections: s.customSections.map((x) =>
+                    x.id === ci.id ? { ...x, name: v } : x,
+                  ),
+                }))
+              }
+            />
+            <DebouncedText
+              value={ci.query}
+              placeholder={t('customSectionQueryPlaceholder')}
+              className="flex-1 font-mono text-[11px]"
+              onCommit={(v) =>
+                update((s) => ({
+                  ...s,
+                  customSections: s.customSections.map((x) =>
+                    x.id === ci.id ? { ...x, query: v } : x,
+                  ),
+                }))
+              }
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 shrink-0"
+              aria-label={t('deleteCustomSection')}
+              onClick={() =>
+                update((s) => ({
+                  ...s,
+                  customSections: s.customSections.filter((x) => x.id !== ci.id),
+                  syncGroups: s.syncGroups.map((gr) =>
+                    gr.sectionIds.includes(ci.id)
+                      ? { ...gr, sectionIds: gr.sectionIds.filter((id) => id !== ci.id) }
+                      : gr,
+                  ),
+                }))
+              }
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
+        ))}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground h-7 gap-1 px-2 text-[11px]"
+          disabled={settings.customSections.length >= MAX_CUSTOM_SECTIONS}
+          onClick={() =>
+            update((s) => ({
+              ...s,
+              customSections: [
+                ...s.customSections,
+                { id: `${CUSTOM_SECTION_PREFIX}${crypto.randomUUID()}`, name: '', query: '' },
+              ],
+            }))
+          }
+        >
+          <Plus className="size-3" />
+          {t('addCustomSection')}
+        </Button>
       </section>
 
       <section className="space-y-2">
@@ -260,10 +353,6 @@ export function SettingsView({ settings, update }: Props): React.JSX.Element {
   );
 }
 
-/**
- * Chromeのタブグループ色ピッカー風: 3×3グリッドの丸、選択中は二重丸。
- * 色名テキストを出さないのでローカリゼーション不要。
- */
 function sortKeyLabel(key: SortKey): string {
   return t(
     key === 'repo' ? 'sortKeyRepo' : key === 'created' ? 'sortKeyCreated' : 'sortKeyUpdated',
@@ -348,6 +437,93 @@ function SortEditor({ settings, update }: Props): React.JSX.Element {
   );
 }
 
+/**
+ * グループに割り当てたセクションの順序付きリスト。並び順はタブグループ内の
+ * 表示順に直結する（ソート未指定時）ため、↑↓で並べ替えられる。
+ * 追加は未割当セクションの Select（value は常に空 = プレースホルダ表示）。
+ */
+function GroupSectionList({
+  sectionIds,
+  sections,
+  onChange,
+}: {
+  sectionIds: string[];
+  sections: { id: string; label: string }[];
+  onChange: (next: string[]) => void;
+}): React.JSX.Element {
+  const labelById = new Map(sections.map((i) => [i.id, i.label]));
+  const unassigned = sections.filter((i) => !sectionIds.includes(i.id));
+  const move = (idx: number, delta: -1 | 1): void => {
+    const next = [...sectionIds];
+    const [item] = next.splice(idx, 1);
+    next.splice(idx + delta, 0, item!);
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-1">
+      {sectionIds.map((id, idx) => (
+        <div key={id} className="flex items-center gap-1 text-[13px]">
+          <span className="text-muted-foreground w-4 shrink-0 text-right font-mono text-[10px]">
+            {idx + 1}
+          </span>
+          {/* 削除済みカスタムセクションへの残存参照は生の id を出す（気付けるように） */}
+          <span className="flex-1 truncate">{labelById.get(id) ?? id}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6"
+            aria-label={t('moveUp')}
+            disabled={idx === 0}
+            onClick={() => move(idx, -1)}
+          >
+            <ChevronUp className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6"
+            aria-label={t('moveDown')}
+            disabled={idx === sectionIds.length - 1}
+            onClick={() => move(idx, 1)}
+          >
+            <ChevronDown className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6"
+            aria-label={t('removeSection')}
+            onClick={() => onChange(sectionIds.filter((x) => x !== id))}
+          >
+            <X className="size-3.5" />
+          </Button>
+        </div>
+      ))}
+      {unassigned.length > 0 && (
+        <Select value="" onValueChange={(id) => onChange([...sectionIds, id])}>
+          <SelectTrigger
+            size="sm"
+            className="text-muted-foreground h-7 w-full border-dashed text-[11px]"
+          >
+            <span className="flex items-center gap-1">
+              <Plus className="size-3" />
+              {t('addSection')}
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            {unassigned.map((section) => (
+              <SelectItem key={section.id} value={section.id}>
+                {section.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    </div>
+  );
+}
+
 function ForceAlignButton(): React.JSX.Element {
   const [state, setState] = useState<'idle' | 'running' | 'done'>('idle');
   return (
@@ -376,59 +552,6 @@ function ForceAlignButton(): React.JSX.Element {
   );
 }
 
-function ColorPicker({
-  value,
-  onChange,
-}: {
-  value: TabGroupColor;
-  onChange: (color: TabGroupColor) => void;
-}): React.JSX.Element {
-  const [open, setOpen] = useState(false);
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={value}
-          className="border-input hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 flex h-7 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border bg-transparent shadow-xs transition-colors outline-none focus-visible:ring-[3px]"
-        >
-          <span
-            className="size-3.5 rounded-full"
-            style={{ backgroundColor: GROUP_COLORS[value] }}
-          />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="grid grid-cols-3 gap-1">
-        {(Object.keys(GROUP_COLORS) as TabGroupColor[]).map((c) => {
-          const selected = c === value;
-          return (
-            <button
-              key={c}
-              type="button"
-              aria-label={c}
-              aria-pressed={selected}
-              onClick={() => {
-                onChange(c);
-                setOpen(false);
-              }}
-              className={cn(
-                'flex size-7 cursor-pointer items-center justify-center rounded-full border-2 transition-transform duration-150 outline-none hover:scale-110 focus-visible:scale-110',
-                selected ? 'p-px' : 'border-transparent',
-              )}
-              style={selected ? { borderColor: GROUP_COLORS[c] } : undefined}
-            >
-              <span
-                className="block size-4 rounded-full"
-                style={{ backgroundColor: GROUP_COLORS[c] }}
-              />
-            </button>
-          );
-        })}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 function parseList(text: string): string[] {
   return text
     .split('\n')
@@ -440,13 +563,14 @@ function parseList(text: string): string[] {
 function DebouncedText(props: {
   value: string;
   placeholder?: string;
+  className?: string;
   onCommit: (v: string) => void;
 }): React.JSX.Element {
   const [draft, setDraft] = useState(props.value);
   return (
     <Input
       type="text"
-      className="h-7 w-28 text-xs"
+      className={cn('h-7 text-xs', props.className)}
       value={draft}
       placeholder={props.placeholder}
       onChange={(e) => setDraft(e.target.value)}

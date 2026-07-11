@@ -41,23 +41,26 @@ export interface InboxSnapshot {
   errorDetail?: string;
 }
 
-export type TabGroupColor =
-  | 'grey'
-  | 'blue'
-  | 'red'
-  | 'yellow'
-  | 'green'
-  | 'pink'
-  | 'purple'
-  | 'cyan'
-  | 'orange';
+/**
+ * ユーザー定義の同期グループ。1グループ = 1つの Chrome タブグループ。
+ * id は生成後不変（UIで crypto.randomUUID()、既定グループのみ固定 'default'）。
+ * 色は設定しない — Chrome の自動割当とユーザーの手動変更に任せる。
+ */
+export interface SyncGroup {
+  id: string;
+  /** Chrome タブグループの title。空は編集途中とみなし同期対象外 */
+  name: string;
+  /** KNOWN_SECTIONS のスラッグ or CustomSection.id。同じセクションを複数グループに入れてよい */
+  sectionIds: string[];
+}
 
-export interface SectionSyncConfig {
-  /** タブグループ同期の対象にするか（popup表示は常に全セクション） */
-  enabled: boolean;
-  label: string;
-  groupName: string;
-  groupColor: TabGroupColor;
+/** GitHub 検索構文で /pulls/inbox/queries を叩くカスタムセクション。id は 'custom:<uuid>' */
+export interface CustomSection {
+  id: string;
+  /** popup セクション見出し（空なら query を表示） */
+  name: string;
+  /** filter パラメータに渡す検索構文 */
+  query: string;
 }
 
 /** グループ内ソートのキー。最大2段まで順番に重ねる */
@@ -83,7 +86,9 @@ export interface Settings {
   forceAlignOnRefresh: boolean;
   /** PRが0件になった有効グループをプレースホルダタブ（Inbox Zeroページ）で維持し、位置を保つか（既定: off） */
   keepEmptyGroups: boolean;
-  sections: Record<SectionId, SectionSyncConfig>;
+  /** 同期グループ（popup表示は常に全セクション。同期対象はグループ所属で決まる） */
+  syncGroups: SyncGroup[];
+  customSections: CustomSection[];
   /** 'owner' または 'owner/repo'。空なら全許可 */
   allowlist: string[];
   blocklist: string[];
@@ -94,13 +99,19 @@ export interface OwnedTab {
   tabId: number;
   prId: string;
   prUrl: string;
-  groupName: string;
+  /** SyncGroup.id */
+  groupId: string;
 }
 
 /** chrome.storage.session に保存（ブラウザ終了で消える＝タブ/グループIDの寿命と一致） */
 export interface SyncState {
   ownedTabs: OwnedTab[];
-  groupIds: Record<string, number>;
+  /**
+   * SyncGroup.id → Chrome グループIDと最後に設定した title。
+   * title を保持することで「設定側のリネーム」（chrome title === 保存 title）と
+   * 「ユーザーの chrome 側リネーム」（不一致 → 所有権解放）を区別できる。
+   */
+  groups: Record<string, { chromeGroupId: number; title: string }>;
   backoffUntil?: number;
 }
 

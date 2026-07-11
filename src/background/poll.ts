@@ -1,7 +1,7 @@
 import type { AuthState, DebugDump, InboxSection, InboxSnapshot } from '../types';
 import { buildInboxQueriesUrl, fetchInboxQueries } from '../lib/github/fetch';
 import { ParseError, parseInboxResponse } from '../lib/github/parseInbox';
-import { KNOWN_SECTIONS } from '../lib/settings';
+import { pollTargets } from '../lib/settings';
 import {
   loadSettings,
   loadSnapshot,
@@ -22,7 +22,7 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * fetch → parse → cache → badge → tab sync のパイプライン。
- * popupは全セクションを表示するため、タブ同期の有効/無効に関わらず既知の全セクションを取得する。
+ * popupは全セクションを表示するため、タブ同期の有効/無効に関わらず既知の全セクション + カスタムセクション を取得する。
  */
 export async function runPoll(): Promise<void> {
   const settings = await loadSettings();
@@ -34,13 +34,13 @@ export async function runPoll(): Promise<void> {
   let errorDetail: string | undefined;
   const dumps: DebugDump[] = [];
 
-  outer: for (const { id, label } of KNOWN_SECTIONS) {
-    const cfg = settings.sections[id];
-    const section: InboxSection = { id, label: cfg?.label ?? label, prs: [] };
+  outer: for (const target of pollTargets(settings)) {
+    const { id, label, filter } = target;
+    const section: InboxSection = { id, label, prs: [] };
 
     for (let page = 1; page <= MAX_PAGES_PER_SECTION; page++) {
       if (sections.length > 0 || page > 1) await sleep(REQUEST_SPACING_MS);
-      const outcome = await fetchInboxQueries(id, settings.maxPrAge, page);
+      const outcome = await fetchInboxQueries(filter, settings.maxPrAge, page);
 
       if (outcome.kind === 'logged_out') {
         authState = 'logged_out';
@@ -70,7 +70,7 @@ export async function runPoll(): Promise<void> {
         errorDetail = e instanceof ParseError ? `parse failed (${id}): ${e.message}` : String(e);
         if (settings.debugMode) {
           dumps.push({
-            url: buildInboxQueriesUrl(id, settings.maxPrAge, page),
+            url: buildInboxQueriesUrl(filter, settings.maxPrAge, page),
             status: outcome.status,
             body: outcome.body,
             at: Date.now(),
@@ -111,13 +111,13 @@ export async function applySettingsChange(): Promise<void> {
   await syncTabs();
 }
 
-/** デバッグ: 全既知セクションの生レスポンスを storage.local に保存 */
+/** デバッグ: 全既知セクション + カスタムセクション の生レスポンスを storage.local に保存 */
 export async function runDebugDump(): Promise<{ saved: number }> {
   const settings = await loadSettings();
   const dumps: DebugDump[] = [];
-  for (const { id } of KNOWN_SECTIONS) {
-    const url = buildInboxQueriesUrl(id, settings.maxPrAge);
-    const outcome = await fetchInboxQueries(id, settings.maxPrAge);
+  for (const { filter } of pollTargets(settings)) {
+    const url = buildInboxQueriesUrl(filter, settings.maxPrAge);
+    const outcome = await fetchInboxQueries(filter, settings.maxPrAge);
     dumps.push({
       url,
       status: outcome.kind === 'ok' ? outcome.status : -1,
